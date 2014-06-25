@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <name>Docker Maven Plugin Test Pom</name>
+  <groupId>com.spotify</groupId>
+  <artifactId>docker-maven-plugin-test</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>0.1-SNAPSHOT</version>
+        <configuration>
+          <!-- a DockerFile should be generated since dockerDirectory is not specified -->
+          <baseImage>busybox</baseImage>
+          <maintainer>user</maintainer>
+          <dockerHost>http://host:2375</dockerHost>
+          <imageName>busybox</imageName>
+          <entryPoint>date</entryPoint>
+          <env>
+            <FOO>BAR</FOO>
+          </env>
+          <cmd>-u</cmd>
+          <resources>
+            <resource>
+              <!-- test basic copy functionality -->
+              <targetPath>/xml</targetPath>
+              <directory>src/test/resources</directory>
+              <include>pom-build3.xml</include>
+            </resource>
+            <resource>
+              <!-- test empty targetPath -->
+              <directory>src/test/resources</directory>
+              <include>**/copy-test.json</include>
+            </resource>
+          </resources>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

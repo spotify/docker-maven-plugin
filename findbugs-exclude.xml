@@ -1,0 +1,13 @@
+<FindBugsFilter>
+
+  <!--We're not using Java serialization-->
+  <Match>
+    <Bug pattern="SE_BAD_FIELD"/>
+  </Match>
+
+  <!-- HelpMojo is generated code -->
+  <Match>
+    <Class name="com.spotify.docker.HelpMojo" />
+  </Match>
+
+</FindBugsFilter>

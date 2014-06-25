@@ -1,0 +1,15 @@
+docker-maven-plugin
+
+  A maven plugin for building docker images and pushing them to a registry.
+
+* Goals Overview
+
+  General information about the goals.
+
+  * {{{./build-mojo.html}docker:build}} Builds an image.
+
+  * {{{./push-mojo.html}docker:push}} Pushes an image to a registry.
+
+  * {{{./tag-mojo.html}docker:tag}} Tags an image.
+
+  * {{{./help-mojo.html}docker:help}} Displays help for the plugin.
