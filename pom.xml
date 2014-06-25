@@ -6,13 +6,57 @@
   <artifactId>docker-maven-plugin</artifactId>
   <version>0.0.14-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
-
   <name>docker-maven-plugin</name>
+  <description>A maven plugin for docker</description>
+  <url>https://github.com/spotify/docker-maven-plugin</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <connection>scm:git:https://github.com/spotify/docker-maven-plugin</connection>
+    <developerConnection>scm:git:git@github.com:spotify/docker-maven-plugin</developerConnection>
+    <url>https://github.com/spotify/docker-maven-plugin</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>dano</id>
+      <name>Daniel Norberg</name>
+      <email>dano@spotify.com</email>
+    </developer>
+    <developer>
+      <id>ryan</id>
+      <name>Ryan Culbertson</name>
+      <email>ryan@spotify.com</email>
+    </developer>
+    <developer>
+      <id>drewc</id>
+      <name>Drew Csillag</name>
+      <email>drewc@spotify.com</email>
+    </developer>
+    <developer>
+      <id>philipcristiano</id>
+      <name>Philip Cristiano</name>
+      <email>philipcristiano@spotify.com</email>
+    </developer>
+    <developer>
+      <id>rohan</id>
+      <name>Rohan Singh</name>
+      <email>rohan@spotify.com</email>
+    </developer>
+  </developers>
 
   <dependencies>
     <dependency>
