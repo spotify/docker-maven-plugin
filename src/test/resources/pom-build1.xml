@@ -17,7 +17,7 @@
         <artifactId>docker-maven-plugin</artifactId>
         <version>0.1-SNAPSHOT</version>
         <configuration>
-          <dockerHost>http://host:4243</dockerHost>
+          <dockerHost>http://host:2375</dockerHost>
           <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
           <imageName>busybox</imageName>
           <resources>

@@ -20,7 +20,7 @@
           <!-- a DockerFile should be generated since dockerDirectory is not specified -->
           <baseImage>busybox</baseImage>
           <maintainer>user</maintainer>
-          <dockerHost>http://host:4243</dockerHost>
+          <dockerHost>http://host:2375</dockerHost>
           <imageName>busybox</imageName>
           <entryPoint>date</entryPoint>
           <env>

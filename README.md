@@ -91,8 +91,8 @@ By default the plugin will try to connect to docker on the localhost, but you ca
 of docker running on another host by specifying with the `dockerHost` property, or the standard
 `DOCKER_HOST` environment variable.
 
-    mvn docker:build -DdockerHost=<host>
-    DOCKER_HOST=<host> mvn docker:build
+    mvn docker:build -DdockerHost=<host>:2375
+    DOCKER_HOST=<host>:2375 mvn docker:build
 
 For a complete list of configuration options, see the generated documentation by checking out the
 code and running:
