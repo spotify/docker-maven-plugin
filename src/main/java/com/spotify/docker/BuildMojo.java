@@ -120,10 +120,9 @@ public class BuildMojo extends AbstractDockerMojo {
 
   /**
    * If specified as true, a tag will be generated consisting of the first 7 characters of the most
-   * recent git commit ID, resulting in something like
-   * <tt>registry:80/spotify/serviceName:df8e8e6</tt>. If there are any changes not yet
-   * committed, the string '.DIRTY' will be appended to the end. Note, if a tag is explicitly
-   * specified in the <tt>newName</tt> parameter, this flag will be ignored.
+   * recent git commit ID, resulting in something like <tt>image:df8e8e6</tt>. If there are any
+   * changes not yet committed, the string '.DIRTY' will be appended to the end. Note, if a tag is
+   * explicitly specified in the <tt>newName</tt> parameter, this flag will be ignored.
    */
   @Parameter(property = "useGitCommitId", defaultValue = "false")
   private boolean useGitCommitId;
@@ -140,7 +139,7 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(property = "dockerResources")
   private List<Resource> resources;
 
-  /** Built image will be given this name, e.g. registry:80/spotify/your-service. */
+  /** Built image will be given this name. */
   @Parameter(property = "dockerImageName")
   private String imageName;
 

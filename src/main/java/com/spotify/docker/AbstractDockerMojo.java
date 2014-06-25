@@ -36,7 +36,7 @@ import java.net.URISyntaxException;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
-  private static final String DEFAULT_DOCKER_HOST = "tcp://localhost:4160";
+  private static final String DEFAULT_DOCKER_HOST = "tcp://localhost:4243";
 
   @Component(role = MavenSession.class)
   protected MavenSession session;

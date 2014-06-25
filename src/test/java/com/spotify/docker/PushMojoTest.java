@@ -44,7 +44,7 @@ public class PushMojoTest extends AbstractMojoTestCase {
     assertNotNull(mojo);
     final DockerClient docker = mock(DockerClient.class);
     mojo.execute(docker);
-    verify(docker).push(eq("registry:80/spotify/test"), any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
   }
 
 }

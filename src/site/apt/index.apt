@@ -13,30 +13,3 @@ docker-maven-plugin
   * {{{./tag-mojo.html}docker:tag}} Tags an image.
 
   * {{{./help-mojo.html}docker:help}} Displays help for the plugin.
-
-* Docker Version Compatibility
-
-  Note that the docker API is not always backwards compatible, so each version of the plugin must
-  be used with specific versions of our docker fork.
-
-*---------------*---------------*
- Plugin Version | Docker Version
-*---------------*---------------*
- 0.0.3-0.0.13   | 0.0.8
-*---------------*---------------*
- 0.0.2          | 0.7.6
-*---------------*---------------*
- 0.0.1          | 0.6.7
-*---------------*---------------*
-
-* Usage
-
-  To use the plugin include this snippet in your pom.xml. See the {{{./usage.html}usage page}} for more details.
-
-+--------------------------------------------+
-<plugin>
-  <groupId>com.spotify</groupId>
-  <artifactId>docker-maven-plugin</artifactId>
-  <version>0.0.13</version>
-</plugin>
-+--------------------------------------------+

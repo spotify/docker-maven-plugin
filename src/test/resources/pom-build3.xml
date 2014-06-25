@@ -20,8 +20,8 @@
           <!-- a DockerFile should be generated since dockerDirectory is not specified -->
           <baseImage>busybox</baseImage>
           <maintainer>user</maintainer>
-          <dockerHost>http://host:4160</dockerHost>
-          <imageName>registry:80/spotify/test</imageName>
+          <dockerHost>http://host:4243</dockerHost>
+          <imageName>busybox</imageName>
           <entryPoint>date</entryPoint>
           <env>
             <FOO>BAR</FOO>

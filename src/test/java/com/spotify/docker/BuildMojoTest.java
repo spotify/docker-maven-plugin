@@ -91,7 +91,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     final DockerClient docker = mock(DockerClient.class);
 
     mojo.execute(docker);
-    verify(docker).build(eq(Paths.get("target/docker")), eq("registry:80/spotify/test"),
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
                          any(AnsiProgressHandler.class));
     assertTrue("missing target/docker/Dockerfile", new File("target/docker/Dockerfile").exists());
     assertTrue("missing target/docker/testFile", new File("target/docker/testFile").exists());
@@ -111,9 +111,9 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     final DockerClient docker = mock(DockerClient.class);
     mojo.execute(docker);
 
-    verify(docker).build(eq(Paths.get("target/docker")), eq("registry:80/spotify/test"),
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
                          any(AnsiProgressHandler.class));
-    verify(docker).push(eq("registry:80/spotify/test"), any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
   }
 
   public void testBuild3() throws Exception {
@@ -125,7 +125,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     final DockerClient docker = mock(DockerClient.class);
     mojo.execute(docker);
 
-    verify(docker).build(eq(Paths.get("target/docker")), eq("registry:80/spotify/test"),
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
                          any(AnsiProgressHandler.class));
     assertTrue("missing target/docker/Dockerfile", new File("target/docker/Dockerfile").exists());
     assertEquals("wrong dockerfile contents", GENERATED_DOCKERFILE,
@@ -146,7 +146,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     mojo.execute(docker);
 
     verify(docker).build(eq(Paths.get("target/docker")),
-                         eq("registry:80/spotify/docker-maven-plugin-test"),
+                         eq("docker-maven-plugin-test"),
                          any(AnsiProgressHandler.class));
     assertTrue("missing target/docker/Dockerfile", new File("target/docker/Dockerfile").exists());
     assertEquals("wrong dockerfile contents", PROFILE_GENERATED_DOCKERFILE,

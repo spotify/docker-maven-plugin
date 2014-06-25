@@ -19,10 +19,10 @@
                 <configuration>
                     <!-- we have to supply values for all params because unit testing framework -->
                     <!-- doesn't set default values even though the are set in mojo-->
-                    <dockerHost>http://host:4160</dockerHost>
+                    <dockerHost>http://host:4243</dockerHost>
                     <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
                     <resources></resources>
-                    <imageName>registry:80/spotify/test</imageName>
+                    <imageName>busybox</imageName>
                     <!-- test image is pushed -->
                     <pushImage>true</pushImage>
                 </configuration>

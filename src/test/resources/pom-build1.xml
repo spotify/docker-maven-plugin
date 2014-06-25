@@ -17,9 +17,9 @@
         <artifactId>docker-maven-plugin</artifactId>
         <version>0.1-SNAPSHOT</version>
         <configuration>
-          <dockerHost>http://host:4160</dockerHost>
+          <dockerHost>http://host:4243</dockerHost>
           <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
-          <imageName>registry:80/spotify/test</imageName>
+          <imageName>busybox</imageName>
           <resources>
             <resource>
               <!-- test basic functionality and ability to handle subdirectories correctly -->

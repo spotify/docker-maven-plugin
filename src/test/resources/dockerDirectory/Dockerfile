@@ -1,5 +1,5 @@
 FROM       busybox
-MAINTAINER Ryan Culbertson "ryan@spotify.com"
+MAINTAINER John Doe "user@spotify.com"
 
 RUN date >> /build-timestamp
 

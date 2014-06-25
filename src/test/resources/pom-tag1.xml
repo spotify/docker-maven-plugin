@@ -29,7 +29,7 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <version>0.1-SNAPSHOT</version>
                 <configuration>
-                    <dockerHost>http://host:4160</dockerHost>
+                    <dockerHost>http://host:4243</dockerHost>
                     <image>imageToTag</image>
                     <newName>newRepo:newTag</newName>
                     <pushImage>true</pushImage>
