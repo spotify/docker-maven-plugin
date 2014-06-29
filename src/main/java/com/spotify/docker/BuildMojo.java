@@ -203,6 +203,9 @@ public class BuildMojo extends AbstractDockerMojo {
 
     buildImage(docker, destination);
 
+    // Write image info file
+    final Path imageInfoPath = Paths.get(tagInfoFile);
+    Files.createDirectories(imageInfoPath.getParent());
     final FileOutputStream jsonOutput = new FileOutputStream(tagInfoFile);
     try {
       jsonOutput.write(new DockerBuildInformation(imageName).toJsonBytes());
