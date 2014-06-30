@@ -112,10 +112,10 @@ public class BuildMojo extends AbstractDockerMojo {
 
   /**
    * Path to JSON file to write when tagging images.
-   * Default is ${project.build.directory}/image_info.json
+   * Default is ${project.build.testOutputDirectory}/image_info.json
    */
   @Parameter(property = "tagInfoFile",
-              defaultValue = "${project.build.directory}/test-classes/image_info.json")
+              defaultValue = "${project.build.testOutputDirectory}/image_info.json")
   protected String tagInfoFile;
 
   /**
