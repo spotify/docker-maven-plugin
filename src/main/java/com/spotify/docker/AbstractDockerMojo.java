@@ -34,6 +34,8 @@ import org.apache.maven.plugins.annotations.Parameter;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import static com.spotify.docker.client.DefaultDockerClient.NO_TIMEOUT;
+
 abstract class AbstractDockerMojo extends AbstractMojo {
 
   private static final String DEFAULT_DOCKER_HOST = "tcp://localhost:2375";
@@ -61,7 +63,10 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   protected abstract void execute(final DockerClient dockerClient) throws Exception;
 
   protected DockerClient dockerClient() {
-    return new DefaultDockerClient(dockerHost());
+    return DefaultDockerClient.builder()
+        .uri(dockerHost())
+        .readTimeoutMillis(NO_TIMEOUT)
+        .build();
   }
 
   protected String dockerHost() {
