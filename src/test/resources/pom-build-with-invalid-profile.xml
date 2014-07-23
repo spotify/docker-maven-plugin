@@ -10,9 +10,10 @@
   <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
+  <!-- reference.conf requires appName be defined, an exception should be thrown if it's not -->
   <properties>
     <hello>HELLO</hello>
-    <appName>FOOBAR</appName>
+    <!--<appName>FOOBAR</appName>-->
   </properties>
 
   <build>

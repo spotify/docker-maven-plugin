@@ -28,6 +28,7 @@ import org.apache.maven.execution.DefaultMavenExecutionRequest;
 import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecution;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
@@ -48,6 +49,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 
+import static java.lang.String.format;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -70,6 +72,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "ENTRYPOINT date",
       "CMD [\"-u\"]",
       "ADD /xml/pom-build-with-profile.xml /xml/pom-build-with-profile.xml",
+      "ENV APP_NAME FOOBAR",
       "ENV ARTIFACT_ID docker-maven-plugin-test",
       "ENV FOO BAR",
       "ENV FOOZ BARZ",
@@ -153,6 +156,24 @@ public class BuildMojoTest extends AbstractMojoTestCase {
                  Files.readAllLines(Paths.get("target/docker/Dockerfile"), StandardCharsets.UTF_8));
     assertTrue("missing target/docker/xml/pom-build-with-profile.xml",
                new File("target/docker/xml/pom-build-with-profile.xml").exists());
+  }
+
+  public void testBuildWithInvalidProfile() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-with-invalid-profile.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+
+    try {
+      mojo.execute(docker);
+      fail("mojo should have thrown exception because ${appName} is not defined in pom");
+    } catch (MojoExecutionException e) {
+      final String message = "Undefined expression";
+      assertTrue(format("Exception message should have contained '%s'", message),
+                 e.getMessage().contains(message));
+    }
   }
 
   private BuildMojo setupMojo(final File pom) throws Exception {
