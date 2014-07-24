@@ -331,6 +331,10 @@ public class BuildMojo extends AbstractDockerMojo {
       throw new MojoExecutionException("Expression evaluation failed: " + raw, e);
     }
 
+    if (value == null) {
+      throw new MojoExecutionException("Undefined expression: " + raw);
+    }
+
     return value.toString();
   }
 
