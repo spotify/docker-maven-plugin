@@ -36,7 +36,6 @@ import org.apache.maven.project.ProjectBuildingRequest;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -50,6 +49,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -62,8 +62,9 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "MAINTAINER user",
       "ENTRYPOINT date",
       "CMD [\"-u\"]",
-      "ADD /xml/pom-build3.xml /xml/pom-build3.xml",
-      "ADD copy-test.json copy-test.json",
+      "ADD resources/parent/child/child.xml resources/parent/child/child.xml",
+      "ADD resources/parent/parent.xml resources/parent/parent.xml",
+      "ADD copy2.json copy2.json",
       "ENV FOO BAR"
   );
 
@@ -85,8 +86,8 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     deleteDirectory("target/docker");
   }
 
-  public void testBuild1() throws Exception {
-    final File pom = getTestFile("src/test/resources/pom-build1.xml");
+  public void testBuildWithDockerDirectory() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-docker-directory.xml");
     assertNotNull("Null pom.xml", pom);
     assertTrue("pom.xml does not exist", pom.exists());
 
@@ -96,17 +97,11 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     mojo.execute(docker);
     verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
                          any(AnsiProgressHandler.class));
-    assertTrue("missing target/docker/Dockerfile", new File("target/docker/Dockerfile").exists());
-    assertTrue("missing target/docker/testFile", new File("target/docker/testFile").exists());
-    assertTrue("missing target/docker/resources/copy-test.xml",
-               new File("target/docker/resources/copy-test.xml").exists());
-    assertTrue("missing target/docker/resources/pom-build1.xml",
-               new File("target/docker/resources/pom-build1.xml").exists());
-    assertTrue("missing target/docker/file", new File("target/docker/file").exists());
+    assertFilesCopied();
   }
 
-  public void testBuild2() throws Exception {
-    final File pom = getTestFile("src/test/resources/pom-build2.xml");
+  public void testBuildWithPush() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-push.xml");
     assertNotNull("Null pom.xml", pom);
     assertTrue("pom.xml does not exist", pom.exists());
 
@@ -119,8 +114,8 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
   }
 
-  public void testBuild3() throws Exception {
-    final File pom = getTestFile("src/test/resources/pom-build3.xml");
+  public void testBuildWithGeneratedDockerfile() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-generated-dockerfile.xml");
     assertNotNull("Null pom.xml", pom);
     assertTrue("pom.xml does not exist", pom.exists());
 
@@ -130,13 +125,9 @@ public class BuildMojoTest extends AbstractMojoTestCase {
 
     verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
                          any(AnsiProgressHandler.class));
-    assertTrue("missing target/docker/Dockerfile", new File("target/docker/Dockerfile").exists());
+    assertFilesCopied();
     assertEquals("wrong dockerfile contents", GENERATED_DOCKERFILE,
-                 Files.readAllLines(Paths.get("target/docker/Dockerfile"), StandardCharsets.UTF_8));
-    assertTrue("missing target/docker/xml/pom-build3.xml",
-               new File("target/docker/xml/pom-build3.xml").exists());
-    assertTrue("missing target/docker/copy-test.json",
-               new File("target/docker/copy-test.json").exists());
+                 Files.readAllLines(Paths.get("target/docker/Dockerfile"), UTF_8));
   }
 
   public void testBuildWithProfile() throws Exception {
@@ -151,11 +142,10 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     verify(docker).build(eq(Paths.get("target/docker")),
                          eq("docker-maven-plugin-test"),
                          any(AnsiProgressHandler.class));
-    assertTrue("missing target/docker/Dockerfile", new File("target/docker/Dockerfile").exists());
+    assertFileExists("target/docker/xml/pom-build-with-profile.xml");
+    assertFileExists("target/docker/Dockerfile");
     assertEquals("wrong dockerfile contents", PROFILE_GENERATED_DOCKERFILE,
-                 Files.readAllLines(Paths.get("target/docker/Dockerfile"), StandardCharsets.UTF_8));
-    assertTrue("missing target/docker/xml/pom-build-with-profile.xml",
-               new File("target/docker/xml/pom-build-with-profile.xml").exists());
+                 Files.readAllLines(Paths.get("target/docker/Dockerfile"), UTF_8));
   }
 
   public void testBuildWithInvalidProfile() throws Exception {
@@ -218,6 +208,28 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       // directory iteration failed, propagate exception
       throw exc;
     }
+  }
+
+  private static void assertFilesCopied() {
+    // the Dockerfile should have been copied, or generated if no docker directory was specified
+    assertFileExists("target/docker/Dockerfile");
+
+    // files from resources/copy1
+    assertFileExists("target/docker/resources/parent/parent.xml");
+    assertFileExists("target/docker/resources/parent/child/child.xml");
+    assertFileDoesNotExist("target/docker/resources/parent/parent.json");
+    assertFileDoesNotExist("target/docker/resources/parent/child/child-exclude.xml");
+
+    // file from resources/copy2
+    assertFileExists("target/docker/copy2.json");
+  }
+
+  private static void assertFileExists(final String path) {
+    assertTrue(path + " does not exist", new File(path).exists());
+  }
+
+  private static void assertFileDoesNotExist(final String path) {
+    assertFalse(path + "exists but should not", new File(path).exists());
   }
 
 }

@@ -448,18 +448,17 @@ public class BuildMojo extends AbstractDockerMojo {
         getLog().info("No resources will be copied, no files match specified patterns");
       }
 
-      for (String path : scanner.getIncludedFiles()) {
-        final Path sourcePath = Paths.get(resource.getDirectory(), path);
-        // path may include subdirectories so strip out just the filename
-        final String destFile = new File(path).getName();
+      for (String included : scanner.getIncludedFiles()) {
+        final Path sourcePath = Paths.get(resource.getDirectory(), included);
         final String targetPath = resource.getTargetPath() == null ? "" : resource.getTargetPath();
-        final String destRelPath = Paths.get(targetPath, destFile).toString();
-        final Path destPath = Paths.get(destination, targetPath, destFile);
+        final Path destPath = Paths.get(destination, targetPath, included);
         getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));
         // ensure all directories exist because copy operation will fail if they don't
         Files.createDirectories(destPath.getParent());
         Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
-        copiedPaths.add(destRelPath);
+        // file location relative to docker directory, used later to generate Dockerfile
+        final Path relativePath = Paths.get(targetPath, included);
+        copiedPaths.add(relativePath.toString());
       }
     }
 

@@ -27,17 +27,19 @@
             <FOO>BAR</FOO>
           </env>
           <cmd>-u</cmd>
+          <!-- same copying tests as pom-build-docker-directory.xml, but make sure it works with auto-generated -->
+          <!-- docker file. pom-build-docker-directory.xml specified its own docker directory-->
           <resources>
             <resource>
-              <!-- test basic copy functionality -->
-              <targetPath>/xml</targetPath>
-              <directory>src/test/resources</directory>
-              <include>pom-build3.xml</include>
+              <!-- test we handle all elements correctly -->
+              <targetPath>resources</targetPath>
+              <directory>src/test/resources/copy1</directory>
+              <include>**/*.xml</include>
+              <exclude>**/*exclude*</exclude>
             </resource>
             <resource>
-              <!-- test empty targetPath -->
-              <directory>src/test/resources</directory>
-              <include>**/copy-test.json</include>
+              <!-- test we handle missing elements correctly -->
+              <directory>src/test/resources/copy2</directory>
             </resource>
           </resources>
         </configuration>

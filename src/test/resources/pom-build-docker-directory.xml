@@ -18,19 +18,20 @@
         <version>0.1-SNAPSHOT</version>
         <configuration>
           <dockerHost>http://host:2375</dockerHost>
+          <!-- test that dockerDirectory works correctly -->
           <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
           <imageName>busybox</imageName>
           <resources>
             <resource>
-              <!-- test basic functionality and ability to handle subdirectories correctly -->
+              <!-- test we handle all elements correctly -->
               <targetPath>resources</targetPath>
-              <directory>src/test/resources</directory>
+              <directory>src/test/resources/copy1</directory>
               <include>**/*.xml</include>
-              <exclude>*push*</exclude>
+              <exclude>**/*exclude*</exclude>
             </resource>
             <resource>
-              <!-- test that we can handle an empty includes and empty target correctly -->
-              <directory>src/test/resources/copy-test2</directory>
+              <!-- test we handle missing elements correctly -->
+              <directory>src/test/resources/copy2</directory>
             </resource>
           </resources>
         </configuration>
