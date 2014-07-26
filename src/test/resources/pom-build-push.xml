@@ -21,7 +21,6 @@
                     <!-- doesn't set default values even though the are set in mojo-->
                     <dockerHost>http://host:2375</dockerHost>
                     <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
-                    <resources></resources>
                     <imageName>busybox</imageName>
                     <!-- test image is pushed -->
                     <pushImage>true</pushImage>
