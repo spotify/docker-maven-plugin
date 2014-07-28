@@ -51,10 +51,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.CharMatcher.WHITESPACE;
+import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Ordering.natural;
 import static com.spotify.docker.Utils.parseImageName;
 import static com.spotify.docker.Utils.pushImage;
@@ -278,7 +280,7 @@ public class BuildMojo extends AbstractDockerMojo {
       }
       try {
         final List<String> includes = resourceConfig.getStringList("includes");
-        final List<String> expanded = Lists.newArrayList();
+        final List<String> expanded = newArrayList();
         for (final String raw : includes) {
           expanded.add(expand(raw));
         }
@@ -368,7 +370,7 @@ public class BuildMojo extends AbstractDockerMojo {
 
   private void createDockerFile(String directory, List<String> filesToAdd) throws IOException {
 
-    final List<String> commands = Lists.newArrayList();
+    final List<String> commands = newArrayList();
     if (baseImage != null) {
       commands.add("FROM " + baseImage);
     }
@@ -427,7 +429,7 @@ public class BuildMojo extends AbstractDockerMojo {
 
   private List<String> copyResources(String destination) throws IOException {
 
-    final List<String> copiedPaths = Lists.newArrayList();
+    final List<String> allCopiedPaths = newArrayList();
 
     for (Resource resource : resources) {
       final File source = new File(resource.getDirectory());
@@ -448,6 +450,8 @@ public class BuildMojo extends AbstractDockerMojo {
         getLog().info("No resources will be copied, no files match specified patterns");
       }
 
+      final List<String> copiedPaths = newArrayList();
+
       for (String included : scanner.getIncludedFiles()) {
         final Path sourcePath = Paths.get(resource.getDirectory(), included);
         final String targetPath = resource.getTargetPath() == null ? "" : resource.getTargetPath();
@@ -460,9 +464,19 @@ public class BuildMojo extends AbstractDockerMojo {
         final Path relativePath = Paths.get(targetPath, included);
         copiedPaths.add(relativePath.toString());
       }
+
+      // The list of included files returned from DirectoryScanner can be in a different order
+      // each time. This causes the ADD statements in the generated Dockerfile to appear in a
+      // different order. We want to avoid this so each run of the plugin always generates the same
+      // Dockerfile, which also makes testing easier. Sort the list of paths for each resource
+      // before adding it to the allCopiedPaths list. This way we follow the ordering of the
+      // resources in the pom, while making sure all the paths of each resource are always in the
+      // same order.
+      Collections.sort(copiedPaths);
+      allCopiedPaths.addAll(copiedPaths);
     }
 
-    return copiedPaths;
+    return allCopiedPaths;
   }
 }
 
