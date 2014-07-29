@@ -173,8 +173,6 @@ public class BuildMojo extends AbstractDockerMojo {
       return;
     }
 
-    session.getCurrentProject().getProperties().put("gitShortCommitId", Utils.getGitCommitId());
-
     loadProfile();
 
     validateParameters();
@@ -184,6 +182,8 @@ public class BuildMojo extends AbstractDockerMojo {
     final String tag = repoTag[1];
 
     if (useGitCommitId) {
+      session.getCurrentProject().getProperties().put("gitShortCommitId", Utils.getGitCommitId());
+      
       if (tag != null) {
         getLog().warn("Ignoring useGitCommitId flag because tag is explicitly set in image name ");
       } else {
