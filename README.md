@@ -18,7 +18,7 @@ element.
 ### Specify build info in the POM
 
 This example creates a new image named `example`, copies the project's jar file into the image,
-and sets an entrypoint which runs the jar.
+and sets an entrypoint which runs the jar. Change `VERSION GOES HERE` to the latest tagged version.
 
     <build>
       <plugins>
@@ -26,7 +26,7 @@ and sets an entrypoint which runs the jar.
         <plugin>
           <groupId>com.spotify</groupId>
           <artifactId>docker-maven-plugin</artifactId>
-          <version>0.0.13</version>
+          <version>VERSION GOES HERE</version>
           <configuration>
             <imageName>example</imageName>
             <baseImage>java</baseImage>
