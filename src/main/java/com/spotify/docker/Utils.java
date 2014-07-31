@@ -27,13 +27,6 @@ import com.spotify.docker.client.DockerException;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.Status;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import java.io.IOException;
 
@@ -64,50 +57,6 @@ public class Utils {
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
       log.info("Pushing " + imageName);
       docker.push(imageName, new AnsiProgressHandler());
-  }
-
-  public static String getGitCommitId()
-      throws GitAPIException, DockerException, IOException, MojoExecutionException {
-
-    final FileRepositoryBuilder builder = new FileRepositoryBuilder();
-    builder.readEnvironment(); // scan environment GIT_* variables
-    builder.findGitDir(); // scan up the file system tree
-
-    if (builder.getGitDir() == null) {
-      throw new MojoExecutionException(
-          "Cannot tag with git commit ID because directory not a git repo");
-    }
-
-    final StringBuilder result = new StringBuilder();
-    final Repository repo = builder.build();
-
-    try {
-      // get the first 7 characters of the latest commit
-      final ObjectId head = repo.resolve("HEAD");
-      result.append(head.getName().substring(0, 7));
-      final Git git = new Git(repo);
-
-      // append first git tag we find
-      for (Ref gitTag : git.tagList().call()) {
-        if (gitTag.getObjectId().equals(head)) {
-          // name is refs/tag/name, so get substring after last slash
-          final String name = gitTag.getName();
-          result.append(".");
-          result.append(name.substring(name.lastIndexOf('/') + 1));
-          break;
-        }
-      }
-
-      // append '.DIRTY' if any files have been modified
-      final Status status = git.status().call();
-      if (status.hasUncommittedChanges()) {
-        result.append(".DIRTY");
-      }
-    } finally {
-      repo.close();
-    }
-
-    return result.length() == 0 ? null : result.toString();
   }
 
 }

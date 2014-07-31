@@ -101,7 +101,7 @@ public class TagMojo extends AbstractDockerMojo {
       if (tag != null) {
         getLog().warn("Ignoring useGitCommitId flag because tag is explicitly set in image name ");
       } else {
-        tag = Utils.getGitCommitId();
+        tag = new Git().getCommitId();
       }
     }
 
