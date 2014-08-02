@@ -23,7 +23,6 @@ package com.spotify.docker;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 
@@ -173,10 +172,19 @@ public class BuildMojo extends AbstractDockerMojo {
       return;
     }
 
-    session.getCurrentProject().getProperties().put("gitShortCommitId", Utils.getGitCommitId());
+    final Git git = new Git();
+    final String commitId = git.isRepository() ? git.getCommitId() : null;
+
+    if (commitId == null) {
+      getLog().debug("Not a git repository, cannot get commit ID");
+    } else {
+      // The image name may include ${gitShortCommitId}, in which case loadProfile will replace it
+      // with the latest git commit id. For that to work, we need to put the commit id in the
+      // project properties before calling loadProfile.
+      session.getCurrentProject().getProperties().put("gitShortCommitId", commitId);
+    }
 
     loadProfile();
-
     validateParameters();
 
     final String[] repoTag = parseImageName(imageName);
@@ -186,8 +194,10 @@ public class BuildMojo extends AbstractDockerMojo {
     if (useGitCommitId) {
       if (tag != null) {
         getLog().warn("Ignoring useGitCommitId flag because tag is explicitly set in image name ");
+      } else if (commitId == null) {
+        throw new MojoExecutionException(
+            "Cannot tag with git commit ID because directory not a git repo");
       } else {
-        final String commitId = Utils.getGitCommitId();
         imageName = repo + ":" + commitId;
       }
     }
