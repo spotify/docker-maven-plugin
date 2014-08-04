@@ -65,7 +65,8 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "ADD resources/parent/child/child.xml resources/parent/child/child.xml",
       "ADD resources/parent/parent.xml resources/parent/parent.xml",
       "ADD copy2.json copy2.json",
-      "ENV FOO BAR"
+      "ENV FOO BAR",
+      "EXPOSE 8080 8081"
   );
 
   private static final List<String> PROFILE_GENERATED_DOCKERFILE = Arrays.asList(
@@ -77,7 +78,8 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "ENV ARTIFACT_ID docker-maven-plugin-test",
       "ENV FOO BAR",
       "ENV FOOZ BARZ",
-      "ENV PROPERTY_HELLO HELLO_VALUE"
+      "ENV PROPERTY_HELLO HELLO_VALUE",
+      "EXPOSE 8080 8081 8082"
   );
 
   @Override

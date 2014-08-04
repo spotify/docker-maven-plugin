@@ -26,6 +26,10 @@
           <env>
             <FOO>BAR</FOO>
           </env>
+          <exposes>
+            <expose>8081</expose>
+            <expose>8080</expose>
+          </exposes>
           <cmd>-u</cmd>
           <!-- same copying tests as pom-build-docker-directory.xml, but make sure it works with auto-generated -->
           <!-- docker file. pom-build-docker-directory.xml specified its own docker directory-->

@@ -21,6 +21,7 @@
 
 package com.spotify.docker;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -53,6 +54,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static com.google.common.base.CharMatcher.WHITESPACE;
 import static com.google.common.collect.Lists.newArrayList;
@@ -150,6 +153,11 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(property = "dockerEnv")
   private Map<String, String> env;
 
+  @Parameter(property = "dockerExposes")
+  private List<String> exposes;
+
+  private Set<String> exposesSet;
+
   private PluginParameterExpressionEvaluator expressionEvaluator;
 
   public BuildMojo() {
@@ -165,12 +173,15 @@ public class BuildMojo extends AbstractDockerMojo {
       throws MojoExecutionException, GitAPIException,
              IOException, DockerException, InterruptedException {
 
-    expressionEvaluator = new PluginParameterExpressionEvaluator(session, execution);
-
     if (skipDockerBuild) {
       getLog().info("Skipping docker build");
       return;
     }
+
+    // Put the list of exposed ports into a TreeSet which will remove duplicates and keep them
+    // in a sorted order. This is useful when we merge with ports defined in the profile.
+    exposesSet = new TreeSet<String>(exposes);
+    expressionEvaluator = new PluginParameterExpressionEvaluator(session, execution);
 
     final Git git = new Git();
     final String commitId = git.isRepository() ? git.getCommitId() : null;
@@ -316,6 +327,16 @@ public class BuildMojo extends AbstractDockerMojo {
       }
     }
 
+    // Exposed ports
+    List<String> exposesList = emptyList();
+    try {
+      exposesList = profileConfig.getStringList("exposes");
+    } catch (ConfigException.Missing ignore) {
+    }
+    for (final String raw : exposesList) {
+      exposesSet.add(expand(raw));
+    }
+
     // Simple properties
     imageName = get(imageName, profileConfig, "imageName");
     baseImage = get(baseImage, profileConfig, "baseImage");
@@ -430,6 +451,11 @@ public class BuildMojo extends AbstractDockerMojo {
         final String value = env.get(key);
         commands.add(String.format("ENV %s %s", key, value));
       }
+    }
+
+    if (exposesSet.size() > 0) {
+      // The values will be sorted with no duplicated since exposesSet is a TreeSet
+      commands.add("EXPOSE " + Joiner.on(" ").join(exposesSet));
     }
 
     // this will overwrite an existing file
