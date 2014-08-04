@@ -26,6 +26,9 @@
           <env>
             <FOO>BAR</FOO>
           </env>
+          <exposes>
+            <expose>8082</expose>
+          </exposes>
         </configuration>
       </plugin>
     </plugins>
