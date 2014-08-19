@@ -212,7 +212,7 @@ public class BuildMojo extends AbstractDockerMojo {
         imageName = repo + ":" + commitId;
       }
     }
-    session.getCurrentProject().getProperties().put("docker.imageName", imageName);
+    session.getCurrentProject().getProperties().put("imageName", imageName);
 
     final String destination = Paths.get(buildDirectory, "docker").toString();
     if (dockerDirectory == null) {
