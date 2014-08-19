@@ -58,7 +58,7 @@ element to copy additional files, such as the service's jar file.
         <plugin>
           <groupId>com.spotify</groupId>
           <artifactId>docker-maven-plugin</artifactId>
-          <version>0.0.13</version>
+          <version>VERSION GOES HERE</version>
           <configuration>
             <imageName>example</imageName>
             <dockerDirectory>docker</dockerDirectory>
@@ -87,17 +87,26 @@ To push the image you just built to the registry, specify the `pushImage` flag.
 
     mvn clean package docker:build -DpushImage
 
-By default the plugin will try to connect to docker on the localhost, but you can use an instance 
-of docker running on another host by specifying with the `dockerHost` property, or the standard
-`DOCKER_HOST` environment variable.
+By default the plugin will try to connect to docker on localhost:2375. Set the DOCKER_HOST 
+environment variable to connect elsewhere. 
 
-    mvn docker:build -DdockerHost=<host>:2375
-    DOCKER_HOST=<host>:2375 mvn docker:build
+    DOCKER_HOST=tcp://<host>:2375
 
-For a complete list of configuration options, see the generated documentation by checking out the
-code and running:
+You can also bind the build goal to the package phase, so the container will be built when you run
+just `mvn package`. 
 
-    mvn site
+    <plugin>
+      <groupId>com.spotify</groupId>
+      <artifactId>docker-maven-plugin</artifactId>
+      <version>VERSION GOES HERE</version>
+      <executions>
+        <execution>
+          <phase>package</phase>
+          <goals>
+            <goal>build</goal>
+          </goals>
+        </execution>
+      </executions>
+    </plugin>
 
-The documentation will then be in the `target/site` directory.
-
+For a complete list of configuration options run `mvn spotify-docker:help -Ddetail=true`
