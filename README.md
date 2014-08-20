@@ -93,7 +93,8 @@ environment variable to connect elsewhere.
     DOCKER_HOST=tcp://<host>:2375
 
 You can also bind the build goal to the package phase, so the container will be built when you run
-just `mvn package`. 
+just `mvn package`. If you have a multi-module project where a sub-module builds an image, you
+will need to do this binding so the image gets built when maven is run from the parent project. 
 
     <plugin>
       <groupId>com.spotify</groupId>
