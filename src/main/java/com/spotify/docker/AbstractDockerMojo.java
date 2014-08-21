@@ -53,21 +53,20 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   private String dockerHost;
 
   public void execute() throws MojoExecutionException {
+    final DefaultDockerClient client = DefaultDockerClient.builder()
+        .uri(dockerHost())
+        .readTimeoutMillis(NO_TIMEOUT)
+        .build();
     try {
-      execute(dockerClient());
+      execute(client);
     } catch (Exception e) {
       throw new MojoExecutionException("Exception caught", e);
+    } finally {
+      client.close();
     }
   }
 
   protected abstract void execute(final DockerClient dockerClient) throws Exception;
-
-  protected DockerClient dockerClient() {
-    return DefaultDockerClient.builder()
-        .uri(dockerHost())
-        .readTimeoutMillis(NO_TIMEOUT)
-        .build();
-  }
 
   protected String dockerHost() {
     return normalize(rawDockerHost());
