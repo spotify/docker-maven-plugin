@@ -189,10 +189,17 @@ public class BuildMojo extends AbstractDockerMojo {
     if (commitId == null) {
       getLog().debug("Not a git repository, cannot get commit ID");
     } else {
-      // The image name may include ${gitShortCommitId}, in which case loadProfile will replace it
-      // with the latest git commit id. For that to work, we need to put the commit id in the
-      // project properties before calling loadProfile.
+      // Put the git commit id in the project properties. Image names may contain
+      // ${gitShortCommitId} in which case we want to fill in the actual value using the
+      // expression evaluator. We will do that once here for image names loaded from the pom,
+      // and again in the loadProfile method when we load values from the profile.
       session.getCurrentProject().getProperties().put("gitShortCommitId", commitId);
+      if (imageName != null) {
+        imageName = expand(imageName);
+      }
+      if (baseImage != null) {
+        baseImage = expand(baseImage);
+      }
     }
 
     loadProfile();
