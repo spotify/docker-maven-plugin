@@ -65,7 +65,8 @@ public class Git {
     try {
       // get the first 7 characters of the latest commit
       final ObjectId head = repo.resolve("HEAD");
-      result.append(head.getName().substring(0, 7));
+      final String lastCommitId = getLastCommitId();
+      result.append(lastCommitId.substring(0, 7));
       final org.eclipse.jgit.api.Git git = new org.eclipse.jgit.api.Git(repo);
 
       // append first git tag we find
@@ -89,6 +90,27 @@ public class Git {
     }
 
     return result.length() == 0 ? null : result.toString();
+  }
+
+  /**
+   * Return the full commit ID of the most recent git commit.
+   *
+   * @return String
+   * @throws MojoExecutionException
+   * @throws IOException
+   */
+  public String getLastCommitId() throws MojoExecutionException, IOException {
+    if (repo == null) {
+      throw new MojoExecutionException(
+          "Cannot tag with git commit ID because directory not a git repo");
+    }
+
+    try {
+      final ObjectId head = repo.resolve("HEAD");
+      return head.getName();
+    } finally {
+      repo.close();
+    }
   }
 
 }
