@@ -45,11 +45,14 @@ public class Git {
     builder.findGitDir();
     // if getGitDir is null, then we are not in a git repository
     repo = builder.getGitDir() == null ? null : builder.build();
-
   }
 
   public boolean isRepository() {
     return repo != null;
+  }
+
+  public Repository getRepo() {
+    return repo;
   }
 
   public String getCommitId()
