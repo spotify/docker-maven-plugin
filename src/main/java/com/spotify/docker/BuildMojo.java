@@ -168,6 +168,10 @@ public class BuildMojo extends AbstractDockerMojo {
     this.defaultProfile = defaultProfile;
   }
 
+  public String getImageName() {
+    return imageName;
+  }
+
   @Override
   protected void execute(DockerClient docker)
       throws MojoExecutionException, GitAPIException,
