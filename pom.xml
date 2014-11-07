@@ -4,7 +4,7 @@
 
   <groupId>com.spotify</groupId>
   <artifactId>docker-maven-plugin</artifactId>
-  <version>0.0.24-SNAPSHOT</version>
+  <version>0.0.${revision}</version>
   <packaging>maven-plugin</packaging>
   <name>docker-maven-plugin</name>
   <description>A maven plugin for docker</description>
@@ -70,7 +70,46 @@
       <name>Rohan Singh</name>
       <email>rohan@spotify.com</email>
     </developer>
+    <developer>
+      <id>davidxia</id>
+      <name>David Xia</name>
+      <email>dxia@spotify.com</email>
+    </developer>
   </developers>
+
+  <profiles>
+    <profile>
+      <id>default</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <revision>0-SNAPSHOT</revision>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>sign-artifacts</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
   <dependencies>
     <dependency>
@@ -195,27 +234,6 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>findbugs-maven-plugin</artifactId>
-        <version>2.5.3</version>
-        <configuration>
-          <effort>Max</effort>
-          <threshold>Low</threshold>
-          <xmlOutput>true</xmlOutput>
-          <findbugsXmlOutputDirectory>${project.build.directory}/findbugs
-          </findbugsXmlOutputDirectory>
-          <excludeFilterFile>${project.basedir}/findbugs-exclude.xml</excludeFilterFile>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>verify</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
         <version>2.2.1</version>
@@ -250,6 +268,8 @@
         <artifactId>maven-release-plugin</artifactId>
         <version>2.5</version>
         <configuration>
+          <arguments>-DskipITs -Dgpg.skip=true</arguments>
+          <pushChanges>false</pushChanges>
           <tagNameFormat>v@{project.version}</tagNameFormat>
         </configuration>
         <dependencies>
@@ -281,6 +301,19 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
         <version>3.2</version>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>2.5.3</version>
+        <configuration>
+          <effort>Max</effort>
+          <failOnError>false</failOnError>
+          <threshold>Low</threshold>
+          <xmlOutput>true</xmlOutput>
+          <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+          <excludeFilterFile>${project.basedir}/findbugs-exclude.xml</excludeFilterFile>
+        </configuration>
       </plugin>
     </plugins>
   </reporting>
