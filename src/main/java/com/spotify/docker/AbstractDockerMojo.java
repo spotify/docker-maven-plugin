@@ -31,14 +31,10 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.spotify.docker.client.DefaultDockerClient.NO_TIMEOUT;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
-
-  private static final String DEFAULT_DOCKER_HOST = "tcp://localhost:2375";
 
   @Component(role = MavenSession.class)
   protected MavenSession session;
@@ -47,52 +43,36 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   protected MojoExecution execution;
 
   /**
-   * URL of the docker host. Defaults to DOCKER_HOST env variable or DEFAULT_DOCKER_HOST constant.
+   * URL of the docker host as specified in pom.xml.
    */
   @Parameter(property = "dockerHost")
   private String dockerHost;
 
   public void execute() throws MojoExecutionException {
-    final DefaultDockerClient client = DefaultDockerClient.builder()
-        .uri(dockerHost())
-        .readTimeoutMillis(NO_TIMEOUT)
-        .build();
+    DockerClient client = null;
     try {
+       final DefaultDockerClient.Builder builder = DefaultDockerClient.fromEnv()
+           .readTimeoutMillis(NO_TIMEOUT);
+
+      final String dockerHost = rawDockerHost();
+      if (!isNullOrEmpty(dockerHost)) {
+        builder.uri(dockerHost);
+      }
+
+      client = builder.build();
       execute(client);
     } catch (Exception e) {
       throw new MojoExecutionException("Exception caught", e);
     } finally {
-      client.close();
+      if (client != null) {
+        client.close();
+      }
     }
   }
 
   protected abstract void execute(final DockerClient dockerClient) throws Exception;
 
-  protected String dockerHost() {
-    return normalize(rawDockerHost());
-  }
-
-  private String normalize(final String raw) {
-    final String withSchema = raw.contains("://") ? raw : "tcp://" + raw;
-    final URI uri = URI.create(withSchema);
-    final URI normalized;
-    try {
-      normalized = new URI("http", uri.getUserInfo(), uri.getHost(), uri.getPort(), uri.getPath(),
-                           uri.getQuery(), uri.getFragment());
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
-    return normalized.toString();
-  }
-
   protected String rawDockerHost() {
-    if (dockerHost != null) {
-      return dockerHost;
-    }
-    final String dockerHostEnv = System.getenv("DOCKER_HOST");
-    if (dockerHostEnv != null) {
-      return dockerHostEnv;
-    }
-    return DEFAULT_DOCKER_HOST;
+    return dockerHost;
   }
 }
