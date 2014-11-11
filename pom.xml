@@ -287,7 +287,6 @@
           <serverId>ossrh</serverId>
           <nexusUrl>https://oss.sonatype.org/</nexusUrl>
           <autoReleaseAfterClose>${autoReleaseAfterClose}</autoReleaseAfterClose>
-          <skipRemoteStaging>true</skipRemoteStaging>
         </configuration>
       </plugin>
     </plugins>
