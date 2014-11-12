@@ -172,6 +172,10 @@ public class BuildMojo extends AbstractDockerMojo {
     return imageName;
   }
 
+  public boolean getPushImage() {
+    return pushImage;
+  }
+
   @Override
   protected void execute(DockerClient docker)
       throws MojoExecutionException, GitAPIException,
