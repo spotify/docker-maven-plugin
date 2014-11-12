@@ -42,6 +42,10 @@ public class PushMojo extends AbstractDockerMojo {
   @Parameter(property = "imageName", required = true)
   private String imageName;
 
+  public String getImageName() {
+    return imageName;
+  }
+
   protected void execute(DockerClient docker)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
     pushImage(docker, imageName, getLog());
