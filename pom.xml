@@ -119,8 +119,8 @@
             <artifactId>maven-invoker-plugin</artifactId>
             <version>1.7</version>
             <configuration>
-              <debug>true</debug>
               <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+              <streamLogs>true</streamLogs>
               <pomIncludes>
                 <pomInclude>*/pom.xml</pomInclude>
               </pomIncludes>
