@@ -15,30 +15,30 @@
             <id>default</id>
             <phases>
               <process-resources>
-                org.apache.maven.plugins:maven-resources-plugin:resources
+                org.apache.maven.plugins:maven-resources-plugin:2.6:resources
               </process-resources>
               <compile>
-                org.apache.maven.plugins:maven-compiler-plugin:compile
+                org.apache.maven.plugins:maven-compiler-plugin:2.5.1:compile
               </compile>
               <process-test-resources>
-                org.apache.maven.plugins:maven-resources-plugin:testResources
+                org.apache.maven.plugins:maven-resources-plugin:2.6:testResources
               </process-test-resources>
               <test-compile>
-                org.apache.maven.plugins:maven-compiler-plugin:testCompile
+                org.apache.maven.plugins:maven-compiler-plugin:2.5.1:testCompile
               </test-compile>
               <test>
-                org.apache.maven.plugins:maven-surefire-plugin:test
+                org.apache.maven.plugins:maven-surefire-plugin:2.12.4:test
               </test>
               <prepare-package>
                 <!-- Moved from package to prepare-package -->
-                org.apache.maven.plugins:maven-jar-plugin:jar
+                org.apache.maven.plugins:maven-jar-plugin:2.4:jar
               </prepare-package>
               <package>
                 <!-- Added -->
                 com.spotify:docker-maven-plugin:build
               </package>
               <install>
-                org.apache.maven.plugins:maven-install-plugin:install
+                org.apache.maven.plugins:maven-install-plugin:2.4:install
               </install>
               <deploy>
                 org.apache.maven.plugins:maven-deploy-plugin:2.7:deploy
