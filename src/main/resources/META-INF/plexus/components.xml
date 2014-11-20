@@ -41,7 +41,7 @@
                 org.apache.maven.plugins:maven-install-plugin:2.4:install
               </install>
               <deploy>
-                org.apache.maven.plugins:maven-deploy-plugin:2.7:deploy
+                org.apache.maven.plugins:maven-deploy-plugin:2.7:deploy,
                 <!-- Added -->
                 com.spotify:docker-maven-plugin:push
               </deploy>
