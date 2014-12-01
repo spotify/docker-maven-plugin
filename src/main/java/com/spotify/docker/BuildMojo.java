@@ -35,11 +35,13 @@ import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.PluginParameterExpressionEvaluator;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
 import org.codehaus.plexus.util.DirectoryScanner;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -51,11 +53,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 import static com.google.common.base.CharMatcher.WHITESPACE;
 import static com.google.common.collect.Lists.newArrayList;
@@ -158,6 +163,9 @@ public class BuildMojo extends AbstractDockerMojo {
 
   private Set<String> exposesSet;
 
+  @Parameter(defaultValue = "${project}")
+  private MavenProject mavenProject;
+
   private PluginParameterExpressionEvaluator expressionEvaluator;
 
   public BuildMojo() {
@@ -201,7 +209,7 @@ public class BuildMojo extends AbstractDockerMojo {
       // ${gitShortCommitId} in which case we want to fill in the actual value using the
       // expression evaluator. We will do that once here for image names loaded from the pom,
       // and again in the loadProfile method when we load values from the profile.
-      session.getCurrentProject().getProperties().put("gitShortCommitId", commitId);
+      mavenProject.getProperties().put("gitShortCommitId", commitId);
       if (imageName != null) {
         imageName = expand(imageName);
       }
@@ -227,7 +235,7 @@ public class BuildMojo extends AbstractDockerMojo {
         imageName = repo + ":" + commitId;
       }
     }
-    session.getCurrentProject().getProperties().put("imageName", imageName);
+    mavenProject.getProperties().put("imageName", imageName);
 
     final String destination = Paths.get(buildDirectory, "docker").toString();
     if (dockerDirectory == null) {
@@ -242,19 +250,40 @@ public class BuildMojo extends AbstractDockerMojo {
 
     buildImage(docker, destination);
 
+    DockerBuildInformation buildInfo = new DockerBuildInformation(imageName);
+
     // Write image info file
     final Path imageInfoPath = Paths.get(tagInfoFile);
     Files.createDirectories(imageInfoPath.getParent());
-    final FileOutputStream jsonOutput = new FileOutputStream(tagInfoFile);
-    try {
-      jsonOutput.write(new DockerBuildInformation(imageName).toJsonBytes());
-    } finally {
-      jsonOutput.close();
+    Files.write(imageInfoPath, buildInfo.toJsonBytes());
+
+    if ("docker".equals(mavenProject.getPackaging())) {
+      File imageArtifact = createImageArtifact(mavenProject.getArtifact(), buildInfo);
+      mavenProject.getArtifact().setFile(imageArtifact);
     }
 
     if (pushImage) {
       pushImage(docker, imageName, getLog());
     }
+  }
+
+  private File createImageArtifact(Artifact mainArtifact, DockerBuildInformation buildInfo)
+      throws IOException {
+    String fileName =
+        MessageFormat.format(
+            "{0}-{1}-docker.jar", mainArtifact.getArtifactId(),
+            mainArtifact.getVersion());
+
+    File f = Paths.get(buildDirectory, fileName).toFile();
+    try (JarOutputStream out = new JarOutputStream(new FileOutputStream(f))) {
+      JarEntry entry = new JarEntry(
+          MessageFormat.format("META-INF/docker/{0}/{1}/image-info.json",
+                               mainArtifact.getGroupId(), mainArtifact.getArtifactId()));
+      out.putNextEntry(entry);
+      out.write(buildInfo.toJsonBytes());
+    }
+
+    return f;
   }
 
   private void loadProfile() throws MojoExecutionException {
