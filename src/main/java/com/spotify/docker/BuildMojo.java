@@ -203,7 +203,13 @@ public class BuildMojo extends AbstractDockerMojo {
     final String commitId = git.isRepository() ? git.getCommitId() : null;
 
     if (commitId == null) {
-      getLog().debug("Not a git repository, cannot get commit ID");
+      final String errorMessage =
+        "Not a git repository, cannot get commit ID. Make sure git repository is initialized.";
+      if (useGitCommitId || ((imageName != null) && imageName.contains("${gitShortCommitId}"))) {
+        throw new MojoExecutionException(errorMessage);
+      } else {
+        getLog().debug(errorMessage);
+      }
     } else {
       // Put the git commit id in the project properties. Image names may contain
       // ${gitShortCommitId} in which case we want to fill in the actual value using the
