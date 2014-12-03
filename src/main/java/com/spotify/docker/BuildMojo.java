@@ -63,6 +63,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 import static com.google.common.base.CharMatcher.WHITESPACE;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Ordering.natural;
 import static com.spotify.docker.Utils.parseImageName;
@@ -151,6 +152,10 @@ public class BuildMojo extends AbstractDockerMojo {
   /** Built image will be given this name. */
   @Parameter(property = "dockerImageName")
   private String imageName;
+
+/** Additional tags to tag the image with. */
+  @Parameter(property = "dockerImageTags")
+  private List<String> imageTags;
 
   @Parameter(property = "dockerDefaultBuildProfile")
   private String defaultProfile;
@@ -249,6 +254,7 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     buildImage(docker, destination);
+    tagImage(docker);
 
     DockerBuildInformation buildInfo = new DockerBuildInformation(imageName);
 
@@ -444,6 +450,17 @@ public class BuildMojo extends AbstractDockerMojo {
     getLog().info("Built " + imageName);
   }
 
+  private void tagImage(DockerClient docker)
+      throws DockerException, InterruptedException {
+    String imageNameWithoutTag = parseImageName(imageName)[0];
+    for (String imageTag : imageTags) {
+      if (!isNullOrEmpty(imageTag)){
+        getLog().info("Tagging " + imageName + " with " + imageTag );
+        docker.tag(imageName, imageNameWithoutTag + ":" + imageTag);
+      }
+    }
+  }
+
   private void createDockerFile(String directory, List<String> filesToAdd) throws IOException {
 
     final List<String> commands = newArrayList();
@@ -560,4 +577,3 @@ public class BuildMojo extends AbstractDockerMojo {
     return allCopiedPaths;
   }
 }
-
