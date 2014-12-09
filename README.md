@@ -110,4 +110,5 @@ will need to do this binding so the image gets built when maven is run from the 
       </executions>
     </plugin>
 
-For a complete list of configuration options run `mvn spotify-docker:help -Ddetail=true`
+For a complete list of configuration options run:
+`mvn com.spotify:docker-maven-plugin:<version>:help -Ddetail=true`
