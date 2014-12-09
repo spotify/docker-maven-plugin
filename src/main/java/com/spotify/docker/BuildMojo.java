@@ -461,7 +461,7 @@ public class BuildMojo extends AbstractDockerMojo {
     final String imageNameWithoutTag = parseImageName(imageName)[0];
     for (final String imageTag : imageTags) {
       if (!isNullOrEmpty(imageTag)){
-        getLog().info("Tagging " + imageName + " with " + imageTag );
+        getLog().info("Tagging " + imageName + " with " + imageTag);
         docker.tag(imageName, imageNameWithoutTag + ":" + imageTag);
       }
     }
