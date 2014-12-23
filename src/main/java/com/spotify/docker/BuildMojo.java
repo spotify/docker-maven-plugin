@@ -248,9 +248,9 @@ public class BuildMojo extends AbstractDockerMojo {
     }
     mavenProject.getProperties().put("imageName", imageName);
 
-    final String destination = Paths.get(buildDirectory, "docker").toString();
+    final Path destination = Paths.get(buildDirectory, "docker");
     if (dockerDirectory == null) {
-      final List<String> copiedPaths = copyResources(destination);
+      final List<Path> copiedPaths = copyResources(destination);
       createDockerFile(destination, copiedPaths);
     } else {
       final Resource resource = new Resource();
@@ -449,10 +449,10 @@ public class BuildMojo extends AbstractDockerMojo {
     }
   }
 
-  private void buildImage(DockerClient docker, String buildDir)
+  private void buildImage(DockerClient docker, Path buildDir)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
     getLog().info("Building image " + imageName);
-    docker.build(Paths.get(buildDir), imageName, new AnsiProgressHandler());
+    docker.build(buildDir, imageName, new AnsiProgressHandler());
     getLog().info("Built " + imageName);
   }
 
@@ -467,7 +467,7 @@ public class BuildMojo extends AbstractDockerMojo {
     }
   }
 
-  private void createDockerFile(String directory, List<String> filesToAdd) throws IOException {
+  private void createDockerFile(Path directory, List<Path> filesToAdd) throws IOException {
 
     final List<String> commands = newArrayList();
     if (baseImage != null) {
@@ -509,7 +509,7 @@ public class BuildMojo extends AbstractDockerMojo {
       commands.add("CMD []");
     }
 
-    for (String file : filesToAdd) {
+    for (Path file : filesToAdd) {
       commands.add(String.format("ADD %s %s", file, file));
     }
 
@@ -531,9 +531,9 @@ public class BuildMojo extends AbstractDockerMojo {
     Files.write(Paths.get(directory, "Dockerfile"), commands, UTF_8);
   }
 
-  private List<String> copyResources(String destination) throws IOException {
+  private List<Path> copyResources(Path destination) throws IOException {
 
-    final List<String> allCopiedPaths = newArrayList();
+    final List<Path> allCopiedPaths = newArrayList();
 
     for (Resource resource : resources) {
       final File source = new File(resource.getDirectory());
@@ -554,19 +554,19 @@ public class BuildMojo extends AbstractDockerMojo {
         getLog().info("No resources will be copied, no files match specified patterns");
       }
 
-      final List<String> copiedPaths = newArrayList();
+      final List<Path> copiedPaths = newArrayList();
 
       for (String included : scanner.getIncludedFiles()) {
         final Path sourcePath = Paths.get(resource.getDirectory(), included);
         final String targetPath = resource.getTargetPath() == null ? "" : resource.getTargetPath();
-        final Path destPath = Paths.get(destination, targetPath, included);
+        final Path destPath = destination.resolve(targetPath).resolve(included);
         getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));
         // ensure all directories exist because copy operation will fail if they don't
         Files.createDirectories(destPath.getParent());
         Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
         // file location relative to docker directory, used later to generate Dockerfile
         final Path relativePath = Paths.get(targetPath, included);
-        copiedPaths.add(relativePath.toString());
+        copiedPaths.add(relativePath);
       }
 
       // The list of included files returned from DirectoryScanner can be in a different order
