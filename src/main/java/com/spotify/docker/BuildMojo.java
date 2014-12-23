@@ -23,8 +23,11 @@ package com.spotify.docker;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 
 import com.spotify.docker.client.AnsiProgressHandler;
@@ -54,6 +57,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.MessageFormat;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -509,8 +513,21 @@ public class BuildMojo extends AbstractDockerMojo {
       commands.add("CMD []");
     }
 
+    Multimap<Path, Path> filesByDir = HashMultimap.create();
     for (Path file : filesToAdd) {
-      commands.add(String.format("ADD %s %s", file, file));
+      filesByDir.put(file.getParent(), file);
+    }
+
+    for (Map.Entry<Path, Collection<Path>> copyJob : filesByDir.asMap().entrySet()) {
+      Path dir = copyJob.getKey();
+      Collection<Path> sourceFiles = copyJob.getValue();
+
+      if (sourceFiles.size() == 1) {
+        Path sourceFile = Iterables.getOnlyElement(sourceFiles);
+        commands.add(String.format("COPY %s %s", sourceFile, sourceFile));
+      } else {
+        commands.add(String.format("COPY %s %s", Joiner.on(' ').join(sourceFiles), dir));
+      }
     }
 
     if (env != null) {
