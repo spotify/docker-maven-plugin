@@ -53,6 +53,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileTime;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
@@ -564,6 +565,7 @@ public class BuildMojo extends AbstractDockerMojo {
         // ensure all directories exist because copy operation will fail if they don't
         Files.createDirectories(destPath.getParent());
         Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+        Files.setLastModifiedTime(destPath, FileTime.fromMillis(0));
         // file location relative to docker directory, used later to generate Dockerfile
         final Path relativePath = Paths.get(targetPath, included);
         copiedPaths.add(relativePath.toString());
