@@ -75,7 +75,6 @@ element to copy additional files, such as the service's jar file.
       </plugins>
     </build>
 
-
 ## Usage
 
 You can build an image with the above configurations by running this command.
@@ -115,6 +114,38 @@ To remove the image named `foobar` run the following command:
 
 For a complete list of configuration options run:
 `mvn com.spotify:docker-maven-plugin:<version>:help -Ddetail=true`
+
+### Authenticating with Private Registries
+
+To push to a private Docker image registry that requires authentication, you can put your
+credentials in your Maven's global `settings.xml` file as part of the `<servers></servers>` block.
+
+    <servers>
+      <server>
+        <id>docker-hub</id>
+        <username>foo</username>
+        <password>secret-password</password>
+      </server>
+    </servers>
+
+Now use the server id in your project `pom.xml`.
+
+
+    <plugin>
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>VERSION GOES HERE</version>
+        <configuration>
+          [...]
+          <serverId>docker-hub</serverId>
+          <registryUrl>https://index.docker.io/v1/</registryUrl>
+        </configuration>
+      </plugin>
+    </plugins>
+
+`<registryUrl></registryUrl>` is optional and defaults to `https://index.docker.io/v1/` in the
+Spotify docker-client depedency.
 
 ## Releasing
 
