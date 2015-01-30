@@ -23,6 +23,7 @@ package com.spotify.docker;
 
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.messages.AuthConfig;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -48,6 +49,18 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   @Parameter(property = "dockerHost")
   private String dockerHost;
 
+  @Parameter(property = "docker.registry.username")
+  private String dockerRegistryUsername;
+
+  @Parameter(property = "docker.registry.email")
+  private String dockerRegistryEmail;
+
+  @Parameter(property = "docker.registry.password")
+  private String dockerRegistryPassword;
+
+  @Parameter(property = "docker.registry.server-address")
+  private String dockerRegistryServerAddress;
+
   public void execute() throws MojoExecutionException {
     DockerClient client = null;
     try {
@@ -58,6 +71,22 @@ abstract class AbstractDockerMojo extends AbstractMojo {
       if (!isNullOrEmpty(dockerHost)) {
         builder.uri(dockerHost);
       }
+
+      final AuthConfig.Builder authConfigBuilder = AuthConfig.builder();
+      if (!isNullOrEmpty(dockerRegistryUsername)) {
+        authConfigBuilder.username(dockerRegistryUsername);
+      }
+      if (!isNullOrEmpty(dockerRegistryEmail)) {
+        authConfigBuilder.email(dockerRegistryEmail);
+      }
+      if (!isNullOrEmpty(dockerRegistryPassword)) {
+        authConfigBuilder.password(dockerRegistryPassword);
+      }
+      if (!isNullOrEmpty(dockerRegistryServerAddress)) {
+        authConfigBuilder.serverAddress(dockerRegistryServerAddress);
+      }
+
+      builder.authConfig(authConfigBuilder.build());
 
       client = builder.build();
       execute(client);

@@ -1,15 +1,15 @@
-docker-maven-plugin
-===
+# docker-maven-plugin
+
 
 A Maven plugin for building and pushing Docker images.
 
-Why?
----
+## Why?
+
 You can use this plugin to create a Docker image with artifacts built from your Maven project. For
 example, the build process for a Java service can output a Docker image that runs the service.
 
-Setup
----
+## Setup
+
 You can specify the base image, entry point, cmd, maintainer and files you want to add to your 
 image directly in the pom, without needing a separate `Dockerfile`. If you need other commands such 
 as `RUN` or `VOLUME`, then you will need to create a `Dockerfile` and use the `dockerDirectory`
@@ -76,8 +76,7 @@ element to copy additional files, such as the service's jar file.
     </build>
 
 
-Usage
----
+## Usage
 
 You can build an image with the above configurations by running this command.
 
@@ -112,3 +111,32 @@ will need to do this binding so the image gets built when maven is run from the 
 
 For a complete list of configuration options run:
 `mvn com.spotify:docker-maven-plugin:<version>:help -Ddetail=true`
+
+### Authenticating with Private Registries
+
+To push to a private Docker image registry that requires authentication, you can put your
+credentials in your Maven's global `settings.xml` file. `docker.registry.server-address` is
+optional and defaults to `https://index.docker.io/v1/`.
+
+    <settings>
+      [...]
+      <profiles>
+        <profile>
+          <id>private-docker-registry</id>
+          <properties>
+            <docker.registry.username>foo</docker.registry.username>
+            <docker.registry.email>foo@example.com</docker.registry.email>
+            <docker.registry.password>secret-password</docker.registry.password>
+            <docker.registry.server-address>https://index.docker.io/v1/</docker.registry.server-address>
+          </properties>
+        </profile>
+      </profiles>
+
+      <activeProfiles>
+        <activeProfile>private-docker-registry</activeProfile>
+      </activeProfiles>
+    </settings>
+
+You can also add your credentials as CLI switches. This will override `settings.xml`:
+
+    mvn clean package -Ddocker.registry.username='foobar'
