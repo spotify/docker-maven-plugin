@@ -47,4 +47,17 @@ public class PushMojoTest extends AbstractMojoTestCase {
     verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
   }
 
+  public void testPushPrivateRepo() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-push-private-repo.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final PushMojo mojo = (PushMojo) lookupMojo("push", pom);
+    assertNotNull(mojo);
+    final DockerClient docker = mock(DockerClient.class);
+    // TODO (dxia) Figure out how load private-repo-settings.xml
+    // mojo.execute();
+    // verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
+  }
+
 }
