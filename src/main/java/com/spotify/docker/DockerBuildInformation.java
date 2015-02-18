@@ -26,10 +26,13 @@ import com.google.common.base.Throwables;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.maven.plugin.logging.Log;
 import org.eclipse.jgit.lib.Repository;
+
 import java.io.IOException;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.fasterxml.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALLY;
 import static com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS;
 
@@ -37,16 +40,17 @@ import static com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTR
 public class DockerBuildInformation {
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
       .configure(SORT_PROPERTIES_ALPHABETICALLY, true)
-      .configure(ORDER_MAP_ENTRIES_BY_KEYS, true);
+      .configure(ORDER_MAP_ENTRIES_BY_KEYS, true)
+      .setSerializationInclusion(NON_NULL);
 
   @JsonProperty("image")
   private final String image;
 
   @JsonProperty("repo")
-  private String repo = "";
+  private String repo;
 
   @JsonProperty("commit")
-  private String commit = "";
+  private String commit;
 
 
   public DockerBuildInformation(final String image, final Log log) {
