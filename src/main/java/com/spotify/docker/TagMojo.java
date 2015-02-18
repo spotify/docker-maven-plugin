@@ -111,7 +111,7 @@ public class TagMojo extends AbstractDockerMojo {
 
     final FileOutputStream jsonOutput = new FileOutputStream(tagInfoFile);
     try {
-      jsonOutput.write(new DockerBuildInformation(normalizedName).toJsonBytes());
+      jsonOutput.write(new DockerBuildInformation(normalizedName, getLog()).toJsonBytes());
     } finally {
       jsonOutput.close();
     }
