@@ -26,6 +26,9 @@ import com.google.common.base.Throwables;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.maven.plugin.logging.Log;
+import org.eclipse.jgit.lib.Repository;
+import java.io.IOException;
 
 import static com.fasterxml.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALLY;
 import static com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS;
@@ -35,11 +38,35 @@ public class DockerBuildInformation {
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
       .configure(SORT_PROPERTIES_ALPHABETICALLY, true)
       .configure(ORDER_MAP_ENTRIES_BY_KEYS, true);
+
+  @JsonProperty("image")
   private final String image;
 
-  public DockerBuildInformation(@JsonProperty("image") final String image) {
+  @JsonProperty("repo")
+  private String repo = "";
+
+  @JsonProperty("commit")
+  private String commit = "";
+
+
+  public DockerBuildInformation(final String image, final Log log) {
     this.image = image;
+    updateGitInformation(log);
   }
+
+
+  private void updateGitInformation(Log log) {
+    try {
+      Repository repo = new Git().getRepo();
+      if (repo != null) {
+        this.repo   = repo.getConfig().getString("remote", "origin", "url");
+        this.commit = repo.resolve("HEAD").getName();
+      }
+    } catch (IOException e) {
+      log.error("Failed to read Git information", e);
+    }
+  }
+
 
   public byte[] toJsonBytes() {
     try {
@@ -51,5 +78,13 @@ public class DockerBuildInformation {
 
   public String getImage() {
     return image;
+  }
+
+  public String getRepo(){
+    return repo;
+  }
+
+  public String getCommit(){
+    return commit;
   }
 }

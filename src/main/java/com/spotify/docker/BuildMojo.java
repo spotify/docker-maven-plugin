@@ -263,7 +263,7 @@ public class BuildMojo extends AbstractDockerMojo {
     buildImage(docker, destination);
     tagImage(docker);
 
-    DockerBuildInformation buildInfo = new DockerBuildInformation(imageName);
+    DockerBuildInformation buildInfo = new DockerBuildInformation(imageName, getLog());
 
     // Write image info file
     final Path imageInfoPath = Paths.get(tagInfoFile);
