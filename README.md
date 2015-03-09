@@ -1,15 +1,15 @@
-docker-maven-plugin
-===
+# docker-maven-plugin
+
 
 A Maven plugin for building and pushing Docker images.
 
-Why?
----
+## Why?
+
 You can use this plugin to create a Docker image with artifacts built from your Maven project. For
 example, the build process for a Java service can output a Docker image that runs the service.
 
-Setup
----
+## Setup
+
 You can specify the base image, entry point, cmd, maintainer and files you want to add to your 
 image directly in the pom, without needing a separate `Dockerfile`. If you need other commands such 
 as `RUN` or `VOLUME`, then you will need to create a `Dockerfile` and use the `dockerDirectory`
@@ -76,8 +76,7 @@ element to copy additional files, such as the service's jar file.
     </build>
 
 
-Usage
----
+## Usage
 
 You can build an image with the above configurations by running this command.
 
@@ -112,3 +111,15 @@ will need to do this binding so the image gets built when maven is run from the 
 
 For a complete list of configuration options run:
 `mvn com.spotify:docker-maven-plugin:<version>:help -Ddetail=true`
+
+## Releasing
+
+Commits to the master branch will trigger our continuous integration agent to build the jar and
+release by uploading to Sonatype. If you are a project maintainer with the necessary credentials,
+you can also build and release locally by running the below.
+
+```sh
+mvn release:clean
+mvn release:prepare
+mvn release:perform
+```
