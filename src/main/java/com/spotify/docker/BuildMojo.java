@@ -458,7 +458,7 @@ public class BuildMojo extends AbstractDockerMojo {
   }
 
   private void tagImage(final DockerClient docker)
-      throws DockerException, InterruptedException {
+      throws DockerException, InterruptedException, MojoExecutionException {
     final String imageNameWithoutTag = parseImageName(imageName)[0];
     for (final String imageTag : imageTags) {
       if (!isNullOrEmpty(imageTag)){

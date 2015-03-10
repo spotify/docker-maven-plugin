@@ -23,6 +23,8 @@ package com.spotify.docker;
 
 import junit.framework.TestCase;
 
+import org.apache.maven.plugin.MojoExecutionException;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,7 +34,7 @@ import static com.spotify.docker.Utils.parseImageName;
 
 public class UtilsTest extends TestCase {
 
-  public void testParseImageName() {
+  public void testParseImageName() throws MojoExecutionException {
     assertParsedCorrectly("registry.spotify.net/spotify/image", "tag",
                           parseImageName("registry.spotify.net/spotify/image:tag"));
 
