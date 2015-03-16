@@ -30,9 +30,15 @@ import org.apache.maven.plugin.logging.Log;
 
 import java.io.IOException;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 public class Utils {
 
-  public static String[] parseImageName(String imageName) {
+  public static String[] parseImageName(String imageName) throws MojoExecutionException {
+    if (isNullOrEmpty(imageName)) {
+      throw new MojoExecutionException("You must specify an \"imageName\" in your "
+                                       + "docker-maven-client's plugin configuration");
+    }
     final int lastSlashIndex = imageName.lastIndexOf('/');
     final int lastColonIndex = imageName.lastIndexOf(':');
 
