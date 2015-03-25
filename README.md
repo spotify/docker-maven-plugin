@@ -109,6 +109,10 @@ will need to do this binding so the image gets built when maven is run from the 
       </executions>
     </plugin>
 
+To remove the image named `foobar` run the following command:
+
+	mvn docker:removeImage -DimageName=foobar
+
 For a complete list of configuration options run:
 `mvn com.spotify:docker-maven-plugin:<version>:help -Ddetail=true`
 
