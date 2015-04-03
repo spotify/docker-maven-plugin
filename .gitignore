@@ -11,5 +11,10 @@ pom.xml.versionsBackup
 *.ipr
 *.iws
 
+.settings
+.project
+.classpath
+bin
+
 # Mac OS X Finder
 .DS_Store

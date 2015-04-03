@@ -4,7 +4,7 @@
 
   <groupId>com.spotify</groupId>
   <artifactId>docker-maven-plugin</artifactId>
-  <version>0.2.6-SNAPSHOT</version>
+  <version>0.2.6-ot-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
   <name>docker-maven-plugin</name>
   <description>A maven plugin for docker</description>
@@ -39,8 +39,9 @@
 
   <distributionManagement>
     <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        <id>snapshots</id>
+        <name>artifactory.otlabs.fr-snapshots</name>
+        <url>https://artifactory.otlabs.fr/artifactory/plugins-snapshot-local</url>
     </snapshotRepository>
   </distributionManagement>
 
@@ -276,9 +277,9 @@
           <execution>
             <id>integration-test</id>
             <goals>
-              <goal>install</goal>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
+<!--               <goal>install</goal> -->
+<!--               <goal>integration-test</goal> -->
+<!--               <goal>verify</goal> -->
             </goals>
           </execution>
         </executions>
