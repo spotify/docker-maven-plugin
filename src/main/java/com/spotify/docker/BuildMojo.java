@@ -479,6 +479,12 @@ public class BuildMojo extends AbstractDockerMojo {
       if (runList != null && !runList.isEmpty()) {
         getLog().warn("Ignoring run because dockerDirectory is set");
       }
+      if (workdir != null) {
+          getLog().warn("Ignoring workdir because dockerDirectory is set");
+        }
+      if (user != null) {
+          getLog().warn("Ignoring user because dockerDirectory is set");
+        }
     }
   }
 
