@@ -60,26 +60,30 @@ public class BuildMojoTest extends AbstractMojoTestCase {
   private static final List<String> GENERATED_DOCKERFILE = Arrays.asList(
       "FROM busybox",
       "MAINTAINER user",
-      "ENTRYPOINT date",
-      "CMD [\"-u\"]",
+      "ENV FOO BAR",
+      "WORKDIR /opt/app",
       "ADD resources/parent/child/child.xml resources/parent/child/child.xml",
       "ADD resources/parent/parent.xml resources/parent/parent.xml",
       "ADD copy2.json copy2.json",
-      "ENV FOO BAR",
-      "EXPOSE 8080 8081"
+      "RUN ln -s /a /b",
+      "RUN wget 127.0.0.1:8080",
+      "EXPOSE 8080 8081",
+      "USER app",
+      "ENTRYPOINT date",
+      "CMD [\"-u\"]"
   );
 
   private static final List<String> PROFILE_GENERATED_DOCKERFILE = Arrays.asList(
       "FROM busybox",
-      "ENTRYPOINT date",
-      "CMD [\"-u\"]",
-      "ADD /xml/pom-build-with-profile.xml /xml/pom-build-with-profile.xml",
       "ENV APP_NAME FOOBAR",
       "ENV ARTIFACT_ID docker-maven-plugin-test",
       "ENV FOO BAR",
       "ENV FOOZ BARZ",
       "ENV PROPERTY_HELLO HELLO_VALUE",
-      "EXPOSE 8080 8081 8082"
+      "ADD /xml/pom-build-with-profile.xml /xml/pom-build-with-profile.xml",
+      "EXPOSE 8080 8081 8082",
+      "ENTRYPOINT date",
+      "CMD [\"-u\"]"
   );
 
   @Override
