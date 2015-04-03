@@ -46,6 +46,12 @@
               <directory>src/test/resources/copy2</directory>
             </resource>
           </resources>
+          <runs>
+             <run>ln -s /a /b</run>
+             <run>wget 127.0.0.1:8080</run>
+          </runs>
+          <workdir>/opt/app</workdir>
+          <user>app</user>
         </configuration>
       </plugin>
     </plugins>
