@@ -28,6 +28,7 @@
             <tag>bbbbbbbbb</tag>
             <tag>${env.USER}</tag>
           </imageTags>
+          <forceTags>true</forceTags>
           <entryPoint>["java", "-jar", "/${project.build.finalName}.jar"]</entryPoint>
           <resources>
             <resource>

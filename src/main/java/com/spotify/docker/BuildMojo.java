@@ -99,6 +99,10 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(property = "pushImage", defaultValue = "false")
   private boolean pushImage;
 
+  /** Flag to use force option while tagging. Defaults to false. */
+  @Parameter(property = "forceTags", defaultValue = "false")
+  private boolean forceTags;
+
   /** The maintainer of the image. Ignored if dockerDirectory is set. */
   @Parameter(property = "dockerMaintainer")
   private String maintainer;
@@ -207,6 +211,10 @@ public class BuildMojo extends AbstractDockerMojo {
     return pushImage;
   }
 
+  public boolean getForceTags() {
+    return forceTags;
+  }
+
   @Override
   protected void execute(DockerClient docker)
       throws MojoExecutionException, GitAPIException,
@@ -279,7 +287,7 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     buildImage(docker, destination);
-    tagImage(docker);
+    tagImage(docker, forceTags);
 
     DockerBuildInformation buildInfo = new DockerBuildInformation(imageName, getLog());
 
@@ -495,13 +503,13 @@ public class BuildMojo extends AbstractDockerMojo {
     getLog().info("Built " + imageName);
   }
 
-  private void tagImage(final DockerClient docker)
+  private void tagImage(final DockerClient docker, boolean forceTags)
       throws DockerException, InterruptedException, MojoExecutionException {
     final String imageNameWithoutTag = parseImageName(imageName)[0];
     for (final String imageTag : imageTags) {
       if (!isNullOrEmpty(imageTag)){
         getLog().info("Tagging " + imageName + " with " + imageTag);
-        docker.tag(imageName, imageNameWithoutTag + ":" + imageTag);
+        docker.tag(imageName, imageNameWithoutTag + ":" + imageTag, forceTags);
       }
     }
   }
