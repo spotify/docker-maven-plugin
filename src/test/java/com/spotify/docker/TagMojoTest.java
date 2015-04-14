@@ -45,7 +45,7 @@ public class TagMojoTest extends AbstractMojoTestCase {
     assertNotNull(mojo);
     final DockerClient docker = mock(DockerClient.class);
     mojo.execute(docker);
-    verify(docker).tag("imageToTag", "newRepo:newTag");
+    verify(docker).tag("imageToTag", "newRepo:newTag", false);
     verify(docker).push(eq("newRepo:newTag"), any(AnsiProgressHandler.class));
   }
 
@@ -60,7 +60,7 @@ public class TagMojoTest extends AbstractMojoTestCase {
     final ArgumentCaptor<String> image = ArgumentCaptor.forClass(String.class);
     final ArgumentCaptor<String> name = ArgumentCaptor.forClass(String.class);
     mojo.execute(docker);
-    verify(docker).tag(image.capture(), name.capture());
+    verify(docker).tag(image.capture(), name.capture(), eq(false));
     assertEquals("wrong image", "imageToTag", image.getValue());
     final String[] split = name.getValue().split(":");
     assertEquals("wrong name", "newRepo", split[0]);
@@ -78,7 +78,7 @@ public class TagMojoTest extends AbstractMojoTestCase {
     assertNotNull(mojo);
     final DockerClient docker = mock(DockerClient.class);
     mojo.execute(docker);
-    verify(docker).tag("imageToTag", "newRepo:newTag");
+    verify(docker).tag("imageToTag", "newRepo:newTag", false);
   }
 
 }

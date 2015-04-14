@@ -232,13 +232,15 @@
               <encoding>UTF-8</encoding>
               <consoleOutput>true</consoleOutput>
               <failsOnError>true</failsOnError>
-              <linkXRef>false</linkXRef>
             </configuration>
             <goals>
               <goal>check</goal>
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <linkXRef>false</linkXRef>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
