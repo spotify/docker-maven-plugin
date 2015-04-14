@@ -114,8 +114,9 @@
   <dependencies>
     <dependency>
       <groupId>com.spotify</groupId>
-      <artifactId>docker-client</artifactId>
-      <version>2.7.6</version>
+       <artifactId>docker-client</artifactId>
+      <version>2.7.20</version>
+      <classifier>shaded</classifier>
     </dependency>
     <dependency>
       <groupId>com.typesafe</groupId>
@@ -225,13 +226,15 @@
               <encoding>UTF-8</encoding>
               <consoleOutput>true</consoleOutput>
               <failsOnError>true</failsOnError>
-              <linkXRef>false</linkXRef>
             </configuration>
             <goals>
               <goal>check</goal>
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <linkXRef>false</linkXRef>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
