@@ -26,7 +26,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
-
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerException;
@@ -93,6 +92,14 @@ public class BuildMojo extends AbstractDockerMojo {
    */
   @Parameter(property = "skipDockerBuild", defaultValue = "false")
   private boolean skipDockerBuild;
+
+  /**
+   * Flag to skip docker build, making build goal a no-op. This can be useful when plugin is
+   * declared in a parent project to avoid copy/paste and you don't want it to be applied
+   * on the parent. Defaults to false.
+   * */
+  @Parameter(property = "skipDockerBuildOnPomProjects", defaultValue = "false")
+  private boolean skipDockerBuildOnPomProjects;
 
   /** Flag to push image after it is built. Defaults to false. */
   @Parameter(property = "pushImage", defaultValue = "false")
@@ -195,7 +202,7 @@ public class BuildMojo extends AbstractDockerMojo {
       throws MojoExecutionException, GitAPIException,
              IOException, DockerException, InterruptedException {
 
-    if (skipDockerBuild) {
+    if (skip()) {
       getLog().info("Skipping docker build");
       return;
     }
@@ -583,5 +590,27 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     return allCopiedPaths;
+  }
+
+  private boolean skip() {
+      return skipDockerBuild || skipIfPomProject();
+  }
+
+  private boolean skipIfPomProject() {
+      if (!this.skipDockerBuildOnPomProjects) {
+          return false;
+      }
+
+      if (this.session == null) {
+          return false;
+      }
+
+      MavenProject currentProject = this.session.getCurrentProject();
+      if (currentProject == null) {
+        return false;
+      }
+
+      String packaging = currentProject.getPackaging();
+      return "pom".equalsIgnoreCase(packaging);
   }
 }
