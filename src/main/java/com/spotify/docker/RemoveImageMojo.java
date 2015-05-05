@@ -21,16 +21,17 @@
 
 package com.spotify.docker;
 
-import java.io.IOException;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.DockerRequestException;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.DockerException;
-import com.spotify.docker.client.DockerRequestException;
-import com.spotify.docker.client.shaded.javax.ws.rs.NotFoundException;
+import java.io.IOException;
+
+import javax.ws.rs.NotFoundException;
 
 /**
  * Removes a docker image.
