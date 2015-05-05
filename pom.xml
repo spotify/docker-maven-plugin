@@ -116,6 +116,7 @@
       <groupId>com.spotify</groupId>
       <artifactId>docker-client</artifactId>
       <version>2.7.22</version>
+      <classifier>shaded</classifier>
     </dependency>
     <dependency>
       <groupId>com.typesafe</groupId>
