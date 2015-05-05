@@ -149,6 +149,12 @@
       <artifactId>maven-plugin-testing-harness</artifactId>
       <version>3.1.0</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>junit</groupId>
+          <artifactId>junit</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -164,8 +170,19 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
-      <version>1.9.5</version>
+      <version>1.10.19</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>3.0.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <version>4.1.6.RELEASE</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -173,7 +190,6 @@
       <version>4.12</version>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
   <dependencyManagement>
