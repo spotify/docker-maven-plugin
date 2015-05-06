@@ -182,6 +182,7 @@
           <groupId>org.springframework</groupId>
           <artifactId>spring-test</artifactId>
           <version>4.1.6.RELEASE</version>
+          <scope>test</scope>
       </dependency>
       <dependency>
           <groupId>junit</groupId>
