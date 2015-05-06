@@ -34,6 +34,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.spotify.docker.client.DefaultDockerClient.NO_TIMEOUT;
@@ -52,6 +53,9 @@ abstract class AbstractDockerMojo extends AbstractMojo {
    */
   @Component
   private Settings settings;
+
+  @Component(role = SecDispatcher.class, hint = "mng-4384")
+  private SecDispatcher secDispatcher;
 
   /**
    * URL of the docker host as specified in pom.xml.
@@ -82,7 +86,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
           final AuthConfig.Builder authConfigBuilder = AuthConfig.builder();
 
           final String username = server.getUsername();
-          final String password = server.getPassword();
+          final String password = secDispatcher.decrypt(server.getPassword());
           final String email = getEmail(server);
 
           if (incompleteAuthSettings(username, password, email)) {
