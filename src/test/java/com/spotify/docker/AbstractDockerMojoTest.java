@@ -1,9 +1,5 @@
 package com.spotify.docker;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificateException;
 import com.spotify.docker.client.DockerClient;
@@ -21,200 +17,204 @@ import org.mockito.*;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 /**
  * Created by sweis on 5/5/15.
  */
 @RunWith(MockitoJUnitRunner.class)
 public class AbstractDockerMojoTest {
 
-    private static final String DOCKER_HOST = "testhost";
-    private static final String SERVER_ID = "testId";
-    private static final String REGISTRY_URL = "https://my.docker.reg";
-    private static final String USERNAME = "username";
-    private static final String PASSWORD = "password";
-    private static final String CONFIGURATION_PROPERTY = "configuration";
-    private static final String EMAIL_PROPERTY = "email";
-    private static final String EMAIL = "user@host.domain";
-    private static final String AUTHORIZATION_EXCEPTION = "Incomplete Docker registry authorization credentials.";
-    private static final String DEFAULT_REGISTRY = "https://index.docker.io/v1/";
+  private static final String DOCKER_HOST = "testhost";
+  private static final String SERVER_ID = "testId";
+  private static final String REGISTRY_URL = "https://my.docker.reg";
+  private static final String USERNAME = "username";
+  private static final String PASSWORD = "password";
+  private static final String CONFIGURATION_PROPERTY = "configuration";
+  private static final String EMAIL_PROPERTY = "email";
+  private static final String EMAIL = "user@host.domain";
+  private static final String AUTHORIZATION_EXCEPTION = "Incomplete Docker registry authorization credentials.";
+  private static final String DEFAULT_REGISTRY = "https://index.docker.io/v1/";
 
-    @Mock
-    private MavenSession session;
+  @Mock
+  private MavenSession session;
 
-    @Mock
-    private MojoExecution execution;
+  @Mock
+  private MojoExecution execution;
 
-    @Mock
-    private Settings settings;
+  @Mock
+  private Settings settings;
 
-    @Mock
-    private DefaultDockerClient.Builder builder;
+  @Mock
+  private DefaultDockerClient.Builder builder;
 
-    @Captor
-    private ArgumentCaptor<AuthConfig> authConfigCaptor;
+  @Captor
+  private ArgumentCaptor<AuthConfig> authConfigCaptor;
 
-    @InjectMocks
-    private AbstractDockerMojo sut = new AbstractDockerMojo() {
-        @Override
-        protected void execute(DockerClient dockerClient) throws Exception {
+  @InjectMocks
+  private AbstractDockerMojo sut = new AbstractDockerMojo() {
+    @Override
+    protected void execute(DockerClient dockerClient) throws Exception {
 
-        }
-
-        @Override
-        protected DefaultDockerClient.Builder getBuilder() throws DockerCertificateException {
-            return builder;
-        }
-    };
-
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
     }
 
-    @Test
-    public void testDockerHostSet() throws Exception {
-        ReflectionTestUtils.setField(sut, "dockerHost", DOCKER_HOST);
+    @Override
+    protected DefaultDockerClient.Builder getBuilder() throws DockerCertificateException {
+      return builder;
+    }
+  };
 
+  @Before
+  public void setUp() {
+      MockitoAnnotations.initMocks(this);
+  }
+
+  @Test
+  public void testDockerHostSet() throws Exception {
+    ReflectionTestUtils.setField(sut, "dockerHost", DOCKER_HOST);
+
+    sut.execute();
+
+    verify(builder).uri(DOCKER_HOST);
+  }
+
+  @Test
+  public void testSettingsNoUsername() throws Exception {
+    ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
+
+    Server server = mockServer();
+
+    server.setUsername(null);
+
+    when(settings.getServer(SERVER_ID)).thenReturn(server);
+
+    Throwable cause = null;
+
+    try {
+      sut.execute();
+    } catch (MojoExecutionException exception) {
+      cause = exception.getCause();
+    }
+
+    assertThat(cause).isNotNull().isExactlyInstanceOf(MojoExecutionException.class).
+        hasMessageStartingWith(AUTHORIZATION_EXCEPTION);
+  }
+
+  @Test
+  public void testSettingsNoPassword() throws Exception {
+    ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
+
+    Server server = mockServer();
+
+    server.setPassword(null);
+
+    when(settings.getServer(SERVER_ID)).thenReturn(server);
+
+    Throwable cause = null;
+
+    try {
+      sut.execute();
+    } catch (MojoExecutionException exception) {
+      cause = exception.getCause();
+    }
+
+    assertThat(cause).isNotNull().isExactlyInstanceOf(MojoExecutionException.class).
+        hasMessageStartingWith(AUTHORIZATION_EXCEPTION);
+  }
+
+
+  @Test
+  public void testSettingsNoConfiguration() throws Exception {
+    ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
+
+    Server server = mockServer();
+
+    server.setConfiguration(null);
+
+    when(settings.getServer(SERVER_ID)).thenReturn(server);
+
+    Throwable cause = null;
+
+    try {
         sut.execute();
-
-        verify(builder).uri(DOCKER_HOST);
+    } catch (MojoExecutionException exception) {
+        cause = exception.getCause();
     }
 
-    @Test
-    public void testSettingsNoUsername() throws Exception {
-        ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
+    assertThat(cause).isNotNull().isExactlyInstanceOf(MojoExecutionException.class).
+        hasMessageStartingWith(AUTHORIZATION_EXCEPTION);
+  }
 
-        Server server = mockServer();
 
-        server.setUsername(null);
+  @Test
+  public void testSettingsNoEmail() throws Exception {
+    ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
 
-        when(settings.getServer(SERVER_ID)).thenReturn(server);
+    Server server = mockServer();
 
-        Throwable cause = null;
+    server.setConfiguration(new Xpp3Dom(CONFIGURATION_PROPERTY));
 
-        try {
-            sut.execute();
-        } catch (MojoExecutionException exception) {
-            cause = exception.getCause();
-        }
+    when(settings.getServer(SERVER_ID)).thenReturn(server);
 
-        assertThat(cause).isNotNull().isExactlyInstanceOf(MojoExecutionException.class).
-                hasMessageStartingWith(AUTHORIZATION_EXCEPTION);
+    Throwable cause = null;
+
+    try {
+      sut.execute();
+    } catch (MojoExecutionException exception) {
+      cause = exception.getCause();
     }
 
-    @Test
-    public void testSettingsNoPassword() throws Exception {
-        ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
+    assertThat(cause).isNotNull().isExactlyInstanceOf(MojoExecutionException.class).
+      hasMessageStartingWith(AUTHORIZATION_EXCEPTION);
+  }
 
-        Server server = mockServer();
+  @Test
+  public void testAuthorizationConfiguration() throws Exception {
+    ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
 
-        server.setPassword(null);
+    when(settings.getServer(SERVER_ID)).thenReturn(mockServer());
+    when(builder.authConfig(authConfigCaptor.capture())).thenReturn(builder);
 
-        when(settings.getServer(SERVER_ID)).thenReturn(server);
+    sut.execute();
 
-        Throwable cause = null;
+    AuthConfig authConfig = authConfigCaptor.getValue();
+    assertThat(authConfig).isNotNull();
+    assertThat(authConfig.email()).isEqualTo(EMAIL);
+    assertThat(authConfig.password()).isEqualTo(PASSWORD);
+    assertThat(authConfig.username()).isEqualTo(USERNAME);
+    assertThat(authConfig.serverAddress()).isEqualTo(DEFAULT_REGISTRY);
+  }
 
-        try {
-            sut.execute();
-        } catch (MojoExecutionException exception) {
-            cause = exception.getCause();
-        }
+  @Test
+  public void testAuthorizationConfigurationWithServerAddress() throws Exception {
+    ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
+    ReflectionTestUtils.setField(sut, "registryUrl", REGISTRY_URL);
 
-        assertThat(cause).isNotNull().isExactlyInstanceOf(MojoExecutionException.class).
-                hasMessageStartingWith(AUTHORIZATION_EXCEPTION);
-    }
+    when(settings.getServer(SERVER_ID)).thenReturn(mockServer());
+    when(builder.authConfig(authConfigCaptor.capture())).thenReturn(builder);
 
+    sut.execute();
 
-    @Test
-    public void testSettingsNoConfiguration() throws Exception {
-        ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
+    AuthConfig authConfig = authConfigCaptor.getValue();
+    assertThat(authConfig).isNotNull();
+    assertThat(authConfig.serverAddress()).isEqualTo(REGISTRY_URL);
+  }
 
-        Server server = mockServer();
+  private Server mockServer() {
+    Server server = new Server();
+    server.setUsername(USERNAME);
+    server.setPassword(PASSWORD);
 
-        server.setConfiguration(null);
+    Xpp3Dom email = new Xpp3Dom(EMAIL_PROPERTY);
+    email.setValue(EMAIL);
 
-        when(settings.getServer(SERVER_ID)).thenReturn(server);
+    Xpp3Dom configuration = new Xpp3Dom(CONFIGURATION_PROPERTY);
+    configuration.addChild(email);
 
-        Throwable cause = null;
+    server.setConfiguration(configuration);
 
-        try {
-            sut.execute();
-        } catch (MojoExecutionException exception) {
-            cause = exception.getCause();
-        }
-
-        assertThat(cause).isNotNull().isExactlyInstanceOf(MojoExecutionException.class).
-                hasMessageStartingWith(AUTHORIZATION_EXCEPTION);
-    }
-
-
-    @Test
-    public void testSettingsNoEmail() throws Exception {
-        ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
-
-        Server server = mockServer();
-
-        server.setConfiguration(new Xpp3Dom(CONFIGURATION_PROPERTY));
-
-        when(settings.getServer(SERVER_ID)).thenReturn(server);
-
-        Throwable cause = null;
-
-        try {
-            sut.execute();
-        } catch (MojoExecutionException exception) {
-            cause = exception.getCause();
-        }
-
-        assertThat(cause).isNotNull().isExactlyInstanceOf(MojoExecutionException.class).
-                hasMessageStartingWith(AUTHORIZATION_EXCEPTION);
-    }
-
-    @Test
-    public void testAuthorizationConfiguration() throws Exception {
-        ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
-
-        when(settings.getServer(SERVER_ID)).thenReturn(mockServer());
-        when(builder.authConfig(authConfigCaptor.capture())).thenReturn(builder);
-
-        sut.execute();
-
-        AuthConfig authConfig = authConfigCaptor.getValue();
-        assertThat(authConfig).isNotNull();
-        assertThat(authConfig.email()).isEqualTo(EMAIL);
-        assertThat(authConfig.password()).isEqualTo(PASSWORD);
-        assertThat(authConfig.username()).isEqualTo(USERNAME);
-        assertThat(authConfig.serverAddress()).isEqualTo(DEFAULT_REGISTRY);
-    }
-
-    @Test
-    public void testAuthorizationConfigurationWithServerAddress() throws Exception {
-        ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
-        ReflectionTestUtils.setField(sut, "registryUrl", REGISTRY_URL);
-
-        when(settings.getServer(SERVER_ID)).thenReturn(mockServer());
-        when(builder.authConfig(authConfigCaptor.capture())).thenReturn(builder);
-
-        sut.execute();
-
-        AuthConfig authConfig = authConfigCaptor.getValue();
-        assertThat(authConfig).isNotNull();
-        assertThat(authConfig.serverAddress()).isEqualTo(REGISTRY_URL);
-    }
-
-    private Server mockServer() {
-        Server server = new Server();
-        server.setUsername(USERNAME);
-        server.setPassword(PASSWORD);
-
-        Xpp3Dom email = new Xpp3Dom(EMAIL_PROPERTY);
-        email.setValue(EMAIL);
-
-        Xpp3Dom configuration = new Xpp3Dom(CONFIGURATION_PROPERTY);
-        configuration.addChild(email);
-
-        server.setConfiguration(configuration);
-
-        return server;
-    }
+    return server;
+  }
 }

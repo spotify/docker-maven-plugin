@@ -35,58 +35,58 @@ import static org.mockito.Mockito.verify;
 
 public class UtilsTest {
 
-    private static final String TAG = "tag";
-    private static final String IMAGE = "image";
-    private static final String IMAGE_WITH_SEPERATOR = "image:";
-    private static final String IMAGE_WITH_LIBRARY = "library/image";
-    private static final String IMAGE_FROM_REGISTRY = "registry:80/library/image";
-    private static final String IMAGE_WITH_TAG = "image:tag";
-    private static final String IMAGE_FROM_LIB_WITH_TAG = "library/image:tag";
-    private static final String IMAGE_FROM_REG_WITH_TAG = "registry:80/library/image:tag";
+  private static final String TAG = "tag";
+  private static final String IMAGE = "image";
+  private static final String IMAGE_WITH_SEPERATOR = "image:";
+  private static final String IMAGE_WITH_LIBRARY = "library/image";
+  private static final String IMAGE_FROM_REGISTRY = "registry:80/library/image";
+  private static final String IMAGE_WITH_TAG = "image:tag";
+  private static final String IMAGE_FROM_LIB_WITH_TAG = "library/image:tag";
+  private static final String IMAGE_FROM_REG_WITH_TAG = "registry:80/library/image:tag";
 
 
-    @Test
-    public void testParseImageName() throws MojoExecutionException {
-        String[] result = Utils.parseImageName(IMAGE);
-        assertThat(result).containsExactly(IMAGE, null);
-    }
+  @Test
+  public void testParseImageName() throws MojoExecutionException {
+    String[] result = Utils.parseImageName(IMAGE);
+    assertThat(result).containsExactly(IMAGE, null);
+  }
 
-    @Test
-    public void testParseImageNameWithSeperator() throws MojoExecutionException {
-        String[] result = Utils.parseImageName(IMAGE_WITH_SEPERATOR);
-        assertThat(result).containsExactly(IMAGE, null);
-    }
+  @Test
+  public void testParseImageNameWithSeperator() throws MojoExecutionException {
+    String[] result = Utils.parseImageName(IMAGE_WITH_SEPERATOR);
+    assertThat(result).containsExactly(IMAGE, null);
+  }
 
-    @Test
-    public void testParseImageNameWithTag() throws MojoExecutionException {
-        String[] result = Utils.parseImageName(IMAGE_WITH_TAG);
-        assertThat(result).containsExactly(IMAGE, TAG);
-    }
+  @Test
+  public void testParseImageNameWithTag() throws MojoExecutionException {
+    String[] result = Utils.parseImageName(IMAGE_WITH_TAG);
+    assertThat(result).containsExactly(IMAGE, TAG);
+  }
 
-    @Test
-    public void testParseImageNameWithLibrary() throws MojoExecutionException {
-        String[] result = Utils.parseImageName(IMAGE_WITH_LIBRARY);
-        assertThat(result).containsExactly(IMAGE_WITH_LIBRARY, null);
-    }
+  @Test
+  public void testParseImageNameWithLibrary() throws MojoExecutionException {
+    String[] result = Utils.parseImageName(IMAGE_WITH_LIBRARY);
+    assertThat(result).containsExactly(IMAGE_WITH_LIBRARY, null);
+  }
 
-    @Test
-    public void testParseImageNameWithLibraryAndTag() throws MojoExecutionException {
-        String[] result = Utils.parseImageName(IMAGE_FROM_LIB_WITH_TAG);
-        assertThat(result).containsExactly(IMAGE_WITH_LIBRARY, TAG);
-    }
+  @Test
+  public void testParseImageNameWithLibraryAndTag() throws MojoExecutionException {
+    String[] result = Utils.parseImageName(IMAGE_FROM_LIB_WITH_TAG);
+    assertThat(result).containsExactly(IMAGE_WITH_LIBRARY, TAG);
+  }
 
-    @Test
-    public void testParseImageNameFromRegistryAndTag() throws MojoExecutionException {
-        String[] result = Utils.parseImageName(IMAGE_FROM_REG_WITH_TAG);
-        assertThat(result).containsExactly(IMAGE_FROM_REGISTRY, TAG);
-    }
+  @Test
+  public void testParseImageNameFromRegistryAndTag() throws MojoExecutionException {
+    String[] result = Utils.parseImageName(IMAGE_FROM_REG_WITH_TAG);
+    assertThat(result).containsExactly(IMAGE_FROM_REGISTRY, TAG);
+  }
 
-    @Test
-    public void testPushImage() throws Exception {
-        DockerClient dockerClient = mock(DockerClient.class);
-        Log log = mock(Log.class);
-        Utils.pushImage(dockerClient, IMAGE, log);
+  @Test
+  public void testPushImage() throws Exception {
+    DockerClient dockerClient = mock(DockerClient.class);
+    Log log = mock(Log.class);
+    Utils.pushImage(dockerClient, IMAGE, log);
 
-        verify(dockerClient).push(eq(IMAGE), any(AnsiProgressHandler.class));
-    }
+    verify(dockerClient).push(eq(IMAGE), any(AnsiProgressHandler.class));
+  }
 }
