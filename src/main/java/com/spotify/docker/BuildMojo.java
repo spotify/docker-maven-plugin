@@ -628,13 +628,13 @@ public class BuildMojo extends AbstractDockerMojo {
         
         if (!copyWholeDir) {
             final Path relativePath = Paths.get(targetPath, included);
-            copiedPaths.add(relativePath.toString());
+            copiedPaths.add(unixPath(relativePath));
         }
       }
       
       if (copyWholeDir) {
           final Path relativePath = Paths.get(targetPath);
-          copiedPaths.add(relativePath.toString());
+          copiedPaths.add(unixPath(relativePath));
       }
 
       // The list of included files returned from DirectoryScanner can be in a different order
@@ -650,4 +650,28 @@ public class BuildMojo extends AbstractDockerMojo {
 
     return allCopiedPaths;
   }
+
+    /**
+     * When running on windows, paths are backslash separated,
+     * we need to convert them to unix '/' separated paths.
+     * 
+     * @param path
+     *            object (system specific)
+     * @return unix style path
+     */
+    private String unixPath(Path path) {
+        StringBuilder sb = new StringBuilder();
+        String pathString = path.toString();
+        if (path.isAbsolute() || pathString.startsWith("/") || pathString.startsWith("\\")) {
+            sb.append("/");
+        }
+        for (int i = 0; i < path.getNameCount(); i++) {
+            Path elem = path.getName(i);
+            if (i > 0) {
+                sb.append("/");
+            }
+            sb.append(elem.toString());
+        }
+        return sb.toString();
+    }
 }
