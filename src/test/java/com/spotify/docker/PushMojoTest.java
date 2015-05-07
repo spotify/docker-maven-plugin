@@ -23,7 +23,7 @@ package com.spotify.docker;
 
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
-
+import com.spotify.docker.client.messages.AuthConfig;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 
 import java.io.File;
@@ -47,17 +47,23 @@ public class PushMojoTest extends AbstractMojoTestCase {
     verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
   }
 
-  // TODO (dxia) Figure out how load private-repo-settings.xml
-//  public void testPushPrivateRepo() throws Exception {
-//    final File pom = getTestFile("src/test/resources/pom-push-private-repo.xml");
-//    assertNotNull("Null pom.xml", pom);
-//    assertTrue("pom.xml does not exist", pom.exists());
-//
-//    final PushMojo mojo = (PushMojo) lookupMojo("push", pom);
-//    assertNotNull(mojo);
-//    final DockerClient docker = mock(DockerClient.class);
-//     mojo.execute();
-//     verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
-//  }
+  public void testPushPrivateRepo() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-push-private-repo.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final PushMojo mojo = (PushMojo) lookupMojo("push", pom);
+    assertNotNull(mojo);
+
+    final AuthConfig authConfig = mojo.authConfig();
+    assertEquals("dxia3", authConfig.username());
+    assertEquals("SxpxdUQA2mvX7oj", authConfig.password()); // verify decryption
+    assertEquals("dxia+3@spotify.com", authConfig.email());
+
+    final DockerClient docker = mock(DockerClient.class);
+
+    mojo.execute(docker);
+    verify(docker).push(eq("dxia3/docker-maven-plugin-auth"), any(AnsiProgressHandler.class));
+  }
 
 }
