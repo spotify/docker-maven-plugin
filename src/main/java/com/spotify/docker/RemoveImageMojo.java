@@ -31,6 +31,7 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerException;
 import com.spotify.docker.client.DockerRequestException;
 import com.spotify.docker.client.shaded.javax.ws.rs.NotFoundException;
+import com.spotify.docker.client.ImageNotFoundException;
 
 /**
  * Removes a docker image.
@@ -50,14 +51,19 @@ public class RemoveImageMojo extends AbstractDockerMojo {
         try {
             // force the image to be removed but don't remove untagged parents 
             docker.removeImage(imageName, true, false);
-        } catch (DockerRequestException e) {
+        } catch (Exception e) {
             // ignoring 404 errors only
-            if (e.getCause() != null && NotFoundException.class.equals(e.getCause().getClass())) {
-                getLog().warn("Image " + imageName +
-                        " does not exist and cannot be deleted - ignoring");
-            } else {
-                throw e;
+            for (Throwable rootCause = e;
+                           rootCause != null && rootCause.getCause() != rootCause;
+                           rootCause = rootCause.getCause()) {
+               if (rootCause instanceof ImageNotFoundException || 
+                   rootCause instanceof NotFoundException) {
+                       getLog().warn("Image " + imageName + 
+                                     " does not exist and cannot be deleted - ignoring");
+                       return;
+                 }
             }
+            throw e;
         }
     }
 }

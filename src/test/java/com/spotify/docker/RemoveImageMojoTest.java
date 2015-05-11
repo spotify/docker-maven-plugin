@@ -22,8 +22,11 @@
 package com.spotify.docker;
 
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.ImageNotFoundException;
 
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
+import org.mockito.Mockito;
 
 import java.io.File;
 
@@ -44,4 +47,21 @@ public class RemoveImageMojoTest extends AbstractMojoTestCase {
         verify(docker).removeImage("imageToRemove", true, false);
     }
 
+    public void testRemoveMissingImage() throws Exception {
+    	final File pom = getTestFile("src/test/resources/pom-removeImage.xml");
+        assertNotNull("Null pom.xml", pom);
+        assertTrue("pom.xml does not exist", pom.exists());
+
+        final RemoveImageMojo mojo = (RemoveImageMojo) lookupMojo("removeImage", pom);
+        assertNotNull(mojo);
+        final DockerClient docker = mock(DockerClient.class);
+        Mockito.when(docker.removeImage("imageToRemove", true, false)).thenThrow(new ImageNotFoundException("imageToRemove"));
+        try {
+            mojo.execute(docker);
+            verify(docker).removeImage("imageToRemove", true, false);
+        }
+        catch (DockerException e){
+        	assertFalse("image to remove was missing", e instanceof ImageNotFoundException); 
+        }
+    }
 }
