@@ -1,4 +1,6 @@
 # Build products and artifacts
+.*
+!/.gitignore
 *.html
 .m2-repository/
 target/
