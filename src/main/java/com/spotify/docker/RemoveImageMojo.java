@@ -34,6 +34,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.messages.RemovedImage;
 import com.spotify.docker.client.shaded.javax.ws.rs.NotFoundException;
 import com.spotify.docker.client.ImageNotFoundException;
 
@@ -64,7 +65,9 @@ public class RemoveImageMojo extends AbstractDockerMojo {
              getLog().info("Removing -f " + currImagName); 
              try {
                     // force the image to be removed but don't remove untagged parents 
-                    docker.removeImage(currImagName, true, false);
+                    for (RemovedImage removedImage: docker.removeImage(currImagName, true, false)){
+                         getLog().info("Removed: " + removedImage.imageId());
+                    }
              } catch (ImageNotFoundException | NotFoundException e){
                     // ignoring 404 errors only
                     getLog().warn("Image " + imageName + 
