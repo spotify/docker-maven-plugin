@@ -573,7 +573,6 @@ public class BuildMojo extends AbstractDockerMojo {
         // ensure all directories exist because copy operation will fail if they don't
         Files.createDirectories(destPath.getParent());
         Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
-        Files.setLastModifiedTime(destPath, FileTime.fromMillis(1));
         // file location relative to docker directory, used later to generate Dockerfile
         final Path relativePath = Paths.get(targetPath, included);
         copiedPaths.add(relativePath.toString());
