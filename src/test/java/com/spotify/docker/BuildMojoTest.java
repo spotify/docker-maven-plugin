@@ -48,7 +48,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 
-import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -167,7 +166,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       fail("mojo should have thrown exception because ${appName} is not defined in pom");
     } catch (MojoExecutionException e) {
       final String message = "Undefined expression";
-      assertTrue(format("Exception message should have contained '%s'", message),
+      assertTrue(String.format("Exception message should have contained '%s'", message),
                  e.getMessage().contains(message));
     }
   }

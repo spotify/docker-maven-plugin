@@ -4,7 +4,7 @@
 
   <groupId>com.spotify</groupId>
   <artifactId>docker-maven-plugin</artifactId>
-  <version>0.2.7.OT-SNAPSHOT</version>
+  <version>0.2.10.OT-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
   <name>docker-maven-plugin</name>
   <description>A maven plugin for docker</description>
@@ -116,7 +116,8 @@
     <dependency>
       <groupId>com.spotify</groupId>
       <artifactId>docker-client</artifactId>
-      <version>2.7.5</version>
+      <version>2.7.26</version>
+      <classifier>shaded</classifier>
     </dependency>
     <dependency>
       <groupId>com.typesafe</groupId>
@@ -167,6 +168,12 @@
       <version>1.9.5</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
 
   </dependencies>
 
@@ -207,7 +214,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
+        <version>3.3</version>
         <configuration>
           <source>1.7</source>
           <target>1.7</target>
@@ -226,13 +233,15 @@
               <encoding>UTF-8</encoding>
               <consoleOutput>true</consoleOutput>
               <failsOnError>true</failsOnError>
-              <linkXRef>false</linkXRef>
             </configuration>
             <goals>
               <goal>check</goal>
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <linkXRef>false</linkXRef>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -311,6 +320,9 @@
             <goals>
               <goal>jar</goal>
             </goals>
+            <configuration>
+              <additionalparam>-Xdoclint:none</additionalparam>
+            </configuration>
           </execution>
         </executions>
       </plugin>

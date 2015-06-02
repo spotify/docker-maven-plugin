@@ -28,6 +28,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.maven.plugin.logging.Log;
+import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 
 import java.io.IOException;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.fasterxml.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALLY;
 import static com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS;
+import static com.google.common.base.Strings.isNullOrEmpty;
 
 //* Might be overkill to do it this way, but should simplify things when if/when we add more to this
 public class DockerBuildInformation {
@@ -64,7 +66,10 @@ public class DockerBuildInformation {
       Repository repo = new Git().getRepo();
       if (repo != null) {
         this.repo   = repo.getConfig().getString("remote", "origin", "url");
-        this.commit = repo.resolve("HEAD").getName();
+        final ObjectId head = repo.resolve("HEAD");
+        if (head != null && !isNullOrEmpty(head.getName())) {
+          this.commit = head.getName();
+        }
       }
     } catch (IOException e) {
       log.error("Failed to read Git information", e);

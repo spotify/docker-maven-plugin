@@ -70,6 +70,10 @@ public class TagMojo extends AbstractDockerMojo {
   @Parameter(property = "pushImage", defaultValue = "false")
   private boolean pushImage;
 
+  /** Flag to use force option while tagging. Defaults to false. */
+  @Parameter(property = "forceTags", defaultValue = "false")
+  private boolean forceTags;
+
   /** Path to JSON file to write when tagging images */
   @Parameter(property = "tagInfoFile")
   private String tagInfoFile = "target/image_info.json";
@@ -107,7 +111,7 @@ public class TagMojo extends AbstractDockerMojo {
 
     final String normalizedName = isNullOrEmpty(tag) ? repo : String.format("%s:%s", repo, tag);
     getLog().info(String.format("Creating tag %s from %s", normalizedName, image));
-    docker.tag(image, normalizedName);
+    docker.tag(image, normalizedName, forceTags);
 
     final FileOutputStream jsonOutput = new FileOutputStream(tagInfoFile);
     try {
