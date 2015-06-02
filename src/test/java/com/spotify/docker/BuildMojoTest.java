@@ -23,6 +23,8 @@ package com.spotify.docker;
 
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.ProgressHandler;
+import com.spotify.docker.client.DockerClient.BuildParameter;
 
 import org.apache.maven.execution.DefaultMavenExecutionRequest;
 import org.apache.maven.execution.MavenExecutionRequest;
@@ -33,6 +35,7 @@ import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
+import org.mockito.exceptions.verification.NeverWantedButInvoked;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,8 +54,7 @@ import java.util.Objects;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 public class BuildMojoTest extends AbstractMojoTestCase {
 
@@ -86,6 +88,21 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     super.setUp();
     deleteDirectory("target/docker");
   }
+
+  public void testBuildWithSkipDockerBuildOnPomProjects() throws Exception {
+        final File pom = getTestFile("src/test/resources/pom-build-skip-pom-projects.xml");
+        assertNotNull("Null pom.xml", pom);
+        assertTrue("pom.xml does not exist", pom.exists());
+
+        final BuildMojo mojo = setupMojo(pom);
+        final DockerClient docker = mock(DockerClient.class);
+
+        mojo.execute(docker);
+
+        verify(docker,never()).build(any(Path.class), any(BuildParameter.class));
+        verify(docker,never()).build(any(Path.class), anyString(), any(BuildParameter.class));
+        verify(docker,never()).build(any(Path.class), anyString(), any(ProgressHandler.class), any(BuildParameter.class));
+      }
 
   public void testBuildWithDockerDirectory() throws Exception {
     final File pom = getTestFile("src/test/resources/pom-build-docker-directory.xml");
