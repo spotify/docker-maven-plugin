@@ -29,11 +29,8 @@
         <artifactId>docker-maven-plugin</artifactId>
         <version>0.1-SNAPSHOT</version>
         <configuration>
-          <dockerHost>http://host:2375</dockerHost>
-          <image>imageToTag</image>
-          <newName>newRepo</newName>
-          <!-- test that useGitCommitId works -->
-          <useGitCommitId>true</useGitCommitId>
+          <imageName>dxia3/docker-maven-plugin-auth</imageName>
+          <serverId>docker-hub</serverId>
         </configuration>
       </plugin>
       <plugin>

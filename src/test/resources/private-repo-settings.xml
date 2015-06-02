@@ -1,0 +1,17 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <servers>
+    <server>
+      <id>docker-hub</id>
+      <username>dxia3</username>
+      <password>SxpxdUQA2mvX7oj</password>
+      <configuration>
+        <email>dxia+3@spotify.com</email>
+      </configuration>
+    </server>
+  </servers>
+
+</settings>
