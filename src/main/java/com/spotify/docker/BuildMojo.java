@@ -541,8 +541,11 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     if (runList != null && !runList.isEmpty()) {
-        commands.add("RUN " + Joiner.on(" && \").join(runList));
+        for (String command : runList) {
+            commands.add("RUN " + command);
+        }
     }
+
 
     if (exposesSet.size() > 0) {
       // The values will be sorted with no duplicated since exposesSet is a TreeSet
