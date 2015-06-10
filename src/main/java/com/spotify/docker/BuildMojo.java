@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -573,7 +574,7 @@ public class BuildMojo extends AbstractDockerMojo {
         // ensure all directories exist because copy operation will fail if they don't
         Files.createDirectories(destPath.getParent());
         Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
-        Files.setLastModifiedTime(destPath, FileTime.fromMillis(1));
+        Files.setLastModifiedTime(destPath, FileTime.from(1, TimeUnit.DAYS));
         // file location relative to docker directory, used later to generate Dockerfile
         final Path relativePath = Paths.get(targetPath, included);
         copiedPaths.add(relativePath.toString());
