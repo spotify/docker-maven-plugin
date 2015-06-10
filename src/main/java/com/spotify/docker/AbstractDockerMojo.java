@@ -152,9 +152,11 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     String email = null;
 
     final Xpp3Dom configuration = (Xpp3Dom) server.getConfiguration();
-    final Xpp3Dom emailNode = configuration.getChild("email");
-    if (emailNode != null) {
-      email = emailNode.getValue();
+    if (configuration != null) {
+      final Xpp3Dom emailNode = configuration.getChild("email");
+      if (emailNode != null) {
+        email = emailNode.getValue();
+      }
     }
 
     return email;
