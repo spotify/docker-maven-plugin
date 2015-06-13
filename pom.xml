@@ -4,7 +4,11 @@
 
   <groupId>com.spotify</groupId>
   <artifactId>docker-maven-plugin</artifactId>
+<<<<<<< HEAD
   <version>0.2.10.OT-SNAPSHOT</version>
+=======
+  <version>0.2.10-SNAPSHOT</version>
+>>>>>>> spotify-master
   <packaging>maven-plugin</packaging>
   <name>docker-maven-plugin</name>
   <description>A maven plugin for docker</description>
