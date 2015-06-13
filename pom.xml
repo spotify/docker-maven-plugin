@@ -4,15 +4,11 @@
 
   <groupId>com.spotify</groupId>
   <artifactId>docker-maven-plugin</artifactId>
-<<<<<<< HEAD
-  <version>0.2.10.OT-SNAPSHOT</version>
-=======
   <version>0.2.10-SNAPSHOT</version>
->>>>>>> spotify-master
   <packaging>maven-plugin</packaging>
   <name>docker-maven-plugin</name>
   <description>A maven plugin for docker</description>
-  <url>https://github.com/oberthur/docker-maven-plugin</url>
+  <url>https://github.com/spotify/docker-maven-plugin</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -35,17 +31,16 @@
   </licenses>
 
   <scm>
-    <connection>scm:git:https://github.com/oberthur/docker-maven-plugin</connection>
-    <developerConnection>scm:git:git@github.com:oberthur/docker-maven-plugin</developerConnection>
-    <url>https://github.com/oberthur/docker-maven-plugin</url>
+    <connection>scm:git:https://github.com/spotify/docker-maven-plugin</connection>
+    <developerConnection>scm:git:git@github.com:spotify/docker-maven-plugin</developerConnection>
+    <url>https://github.com/spotify/docker-maven-plugin</url>
     <tag>HEAD</tag>
   </scm>
 
   <distributionManagement>
     <snapshotRepository>
-        <id>snapshots</id>
-        <name>artifactory.otlabs.fr-snapshots</name>
-        <url>https://artifactory.otlabs.fr/artifactory/plugins-snapshot-local</url>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
   </distributionManagement>
 
@@ -91,6 +86,28 @@
       <properties>
         <revision>0-SNAPSHOT</revision>
       </properties>
+    </profile>
+
+    <profile>
+      <id>sign-artifacts</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 
@@ -268,9 +285,9 @@
           <execution>
             <id>integration-test</id>
             <goals>
-<!--               <goal>install</goal> -->
-<!--               <goal>integration-test</goal> -->
-<!--               <goal>verify</goal> -->
+              <goal>install</goal>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
             </goals>
           </execution>
         </executions>

@@ -541,9 +541,7 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     if (runList != null && !runList.isEmpty()) {
-        for (String command : runList) {
-            commands.add("RUN " + command);
-        }
+        commands.add("RUN " + Joiner.on(" &&\\\n\t").join(runList));
     }
 
 
