@@ -148,7 +148,7 @@ Now use the server id in your project `pom.xml`.
     </plugins>
 
 `<registryUrl></registryUrl>` is optional and defaults to `https://index.docker.io/v1/` in the
-Spotify docker-client depedency.
+Spotify docker-client dependency.
 
 ## Releasing
 
