@@ -167,6 +167,27 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     }
   }
 
+  /**
+   * Test what happens if tagInfoFile does not contain a path, i.e. the value is simply
+   * "image_info.json".
+   */
+  public void testBuildWithTagInfoFileInSameDirectory() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-with-tagInfoFile.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+
+    // test is good if this does not blow up
+    mojo.execute(docker);
+
+    final String filePath = mojo.tagInfoFile;
+    assertFileExists(filePath);
+
+    new File(filePath).deleteOnExit();
+  }
+
   private BuildMojo setupMojo(final File pom) throws Exception {
     final MavenExecutionRequest executionRequest = new DefaultMavenExecutionRequest();
     final ProjectBuildingRequest buildingRequest = executionRequest.getProjectBuildingRequest();
@@ -179,7 +200,10 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     // Because test poms are loaded from test/resources, tagInfoFile will default to
     // test/resources/target/image_info.json. Writing the json file to that location will fail
     // because target doesn't exist. So force it to use project's target directory.
-    mojo.tagInfoFile = "target/image_info.json";
+    // But don't overwrite it if a test sets a non-default value.
+    if (mojo.tagInfoFile.contains("src/test/resources")) {
+      mojo.tagInfoFile = "target/image_info.json";
+    }
     mojo.session = session;
     mojo.execution = execution;
     return mojo;

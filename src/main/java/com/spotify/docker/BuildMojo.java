@@ -274,7 +274,9 @@ public class BuildMojo extends AbstractDockerMojo {
 
     // Write image info file
     final Path imageInfoPath = Paths.get(tagInfoFile);
-    Files.createDirectories(imageInfoPath.getParent());
+    if (imageInfoPath.getParent() != null) {
+      Files.createDirectories(imageInfoPath.getParent());
+    }
     Files.write(imageInfoPath, buildInfo.toJsonBytes());
 
     if ("docker".equals(mavenProject.getPackaging())) {
