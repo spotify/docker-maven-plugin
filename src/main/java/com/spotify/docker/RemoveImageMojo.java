@@ -70,9 +70,9 @@ public class RemoveImageMojo extends AbstractDockerMojo {
                     }
              } catch (ImageNotFoundException | NotFoundException e){
                     // ignoring 404 errors only
-                    getLog().warn("Image " + imageName + 
+                    getLog().warn("Image " + currImagName + 
                         " does not exist and cannot be deleted - ignoring");
-                continue;
+                //continue to next tag from list;
              }
         }
          
