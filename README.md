@@ -125,6 +125,9 @@ credentials in your Maven's global `settings.xml` file as part of the `<servers>
         <id>docker-hub</id>
         <username>foo</username>
         <password>secret-password</password>
+        <configuration>
+          <email>foo@email.com</email>
+        </configuration>
       </server>
     </servers>
 
