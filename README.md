@@ -3,6 +3,15 @@
 
 A Maven plugin for building and pushing Docker images.
 
+* [Why](#why)
+* [Setup](#setup)
+  * [Specify build info in the POM](#specify-build-info-in-the-pom)
+  * [Use a Dockerfile](#use-a-dockerfile)
+* [Usage](#usage)
+  * [Authenticating with private registries](#authenticating-with-private-registries)
+* [Releasing](#releasing)
+
+
 ## Why?
 
 You can use this plugin to create a Docker image with artifacts built from your Maven project. For
@@ -161,3 +170,4 @@ mvn release:clean
 mvn release:prepare
 mvn release:perform
 ```
+
