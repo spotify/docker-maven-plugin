@@ -21,10 +21,13 @@
 
 package com.spotify.docker;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.spotify.docker.client.DefaultDockerClient.NO_TIMEOUT;
+
 import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerCertificateException;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.AuthConfig;
-
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
@@ -34,9 +37,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
-
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.spotify.docker.client.DefaultDockerClient.NO_TIMEOUT;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
@@ -68,8 +68,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   public void execute() throws MojoExecutionException {
     DockerClient client = null;
     try {
-       final DefaultDockerClient.Builder builder = DefaultDockerClient.fromEnv()
-           .readTimeoutMillis(NO_TIMEOUT);
+      final DefaultDockerClient.Builder builder = getBuilder();
 
       final String dockerHost = rawDockerHost();
       if (!isNullOrEmpty(dockerHost)) {
@@ -122,6 +121,11 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     }
   }
 
+  protected DefaultDockerClient.Builder getBuilder() throws DockerCertificateException {
+    return DefaultDockerClient.fromEnv()
+      .readTimeoutMillis(NO_TIMEOUT);
+  }
+
   protected abstract void execute(final DockerClient dockerClient) throws Exception;
 
   protected String rawDockerHost() {
@@ -152,8 +156,10 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     String email = null;
 
     final Xpp3Dom configuration = (Xpp3Dom) server.getConfiguration();
+
     if (configuration != null) {
       final Xpp3Dom emailNode = configuration.getChild("email");
+
       if (emailNode != null) {
         email = emailNode.getValue();
       }
