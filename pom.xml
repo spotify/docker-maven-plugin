@@ -77,6 +77,14 @@
     </developer>
   </developers>
 
+  <contributors>
+    <contributor>
+      <name>Marvin Froeder</name>
+      <email>velo.br@gmail.com</email>
+      <url>about.me/velo</url>
+    </contributor>
+  </contributors>
+
   <profiles>
     <profile>
       <id>default</id>
