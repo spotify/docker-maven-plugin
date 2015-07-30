@@ -65,6 +65,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -86,6 +88,8 @@ import static java.util.Collections.emptyList;
  */
 @Mojo(name = "build")
 public class BuildMojo extends AbstractDockerMojo {
+
+  private static final Lock LOCK = new ReentrantLock();
 
   /**
    * The Unix separator character.
@@ -282,6 +286,20 @@ public class BuildMojo extends AbstractDockerMojo {
 
   public boolean isSkipDockerBuild() {
     return skipDockerBuild;
+  }
+
+  @Override
+  public void execute() throws MojoExecutionException
+  {
+    try
+    {
+      LOCK.lock();
+      super.execute();
+    }
+    finally
+    {
+      LOCK.unlock();
+    }
   }
 
   @Override
