@@ -115,6 +115,19 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
   }
 
+  public void testBuildWithPull() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-pull.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+    mojo.execute(docker);
+
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+                         any(AnsiProgressHandler.class), any(DockerClient.BuildParameter.class));
+  }
+
   public void testBuildWithGeneratedDockerfile() throws Exception {
     final File pom = getTestFile("src/test/resources/pom-build-generated-dockerfile.xml");
     assertNotNull("Null pom.xml", pom);

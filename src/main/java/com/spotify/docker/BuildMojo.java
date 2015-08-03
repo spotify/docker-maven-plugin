@@ -24,6 +24,7 @@ package com.spotify.docker;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 
@@ -93,6 +94,12 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(property = "skipDockerBuild", defaultValue = "false")
   private boolean skipDockerBuild;
 
+  /**
+   * Flag to attempt to pull base images even if older images exists locally.
+   */
+  @Parameter(property = "pullOnBuild", defaultValue = "false")
+  private boolean pullOnBuild;
+
   /** Flag to push image after it is built. Defaults to false. */
   @Parameter(property = "pushImage", defaultValue = "false")
   private boolean pushImage;
@@ -157,7 +164,7 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(property = "dockerImageName")
   private String imageName;
 
-/** Additional tags to tag the image with. */
+  /** Additional tags to tag the image with. */
   @Parameter(property = "dockerImageTags")
   private List<String> imageTags;
 
@@ -198,9 +205,9 @@ public class BuildMojo extends AbstractDockerMojo {
   }
 
   @Override
-  protected void execute(DockerClient docker)
-      throws MojoExecutionException, GitAPIException,
-             IOException, DockerException, InterruptedException {
+  protected void execute(final DockerClient docker)
+      throws MojoExecutionException, GitAPIException, IOException, DockerException,
+             InterruptedException {
 
     if (skipDockerBuild) {
       getLog().info("Skipping docker build");
@@ -209,7 +216,7 @@ public class BuildMojo extends AbstractDockerMojo {
 
     // Put the list of exposed ports into a TreeSet which will remove duplicates and keep them
     // in a sorted order. This is useful when we merge with ports defined in the profile.
-    exposesSet = new TreeSet<String>(exposes);
+    exposesSet = new TreeSet<>(exposes);
     expressionEvaluator = new PluginParameterExpressionEvaluator(session, execution);
 
     final Git git = new Git();
@@ -267,10 +274,10 @@ public class BuildMojo extends AbstractDockerMojo {
       copyResources(destination);
     }
 
-    buildImage(docker, destination);
+    buildImage(docker, destination, buildParams());
     tagImage(docker, forceTags);
 
-    DockerBuildInformation buildInfo = new DockerBuildInformation(imageName, getLog());
+    final DockerBuildInformation buildInfo = new DockerBuildInformation(imageName, getLog());
 
     // Write image info file
     final Path imageInfoPath = Paths.get(tagInfoFile);
@@ -280,7 +287,7 @@ public class BuildMojo extends AbstractDockerMojo {
     Files.write(imageInfoPath, buildInfo.toJsonBytes());
 
     if ("docker".equals(mavenProject.getPackaging())) {
-      File imageArtifact = createImageArtifact(mavenProject.getArtifact(), buildInfo);
+      final File imageArtifact = createImageArtifact(mavenProject.getArtifact(), buildInfo);
       mavenProject.getArtifact().setFile(imageArtifact);
     }
 
@@ -289,16 +296,14 @@ public class BuildMojo extends AbstractDockerMojo {
     }
   }
 
-  private File createImageArtifact(Artifact mainArtifact, DockerBuildInformation buildInfo)
-      throws IOException {
-    String fileName =
-        MessageFormat.format(
-            "{0}-{1}-docker.jar", mainArtifact.getArtifactId(),
-            mainArtifact.getVersion());
+  private File createImageArtifact(final Artifact mainArtifact,
+                                   final DockerBuildInformation buildInfo) throws IOException {
+    final String fileName = MessageFormat.format(
+        "{0}-{1}-docker.jar", mainArtifact.getArtifactId(), mainArtifact.getVersion());
 
-    File f = Paths.get(buildDirectory, fileName).toFile();
+    final File f = Paths.get(buildDirectory, fileName).toFile();
     try (JarOutputStream out = new JarOutputStream(new FileOutputStream(f))) {
-      JarEntry entry = new JarEntry(
+      final JarEntry entry = new JarEntry(
           MessageFormat.format("META-INF/docker/{0}/{1}/image-info.json",
                                mainArtifact.getGroupId(), mainArtifact.getArtifactId()));
       out.putNextEntry(entry);
@@ -459,10 +464,11 @@ public class BuildMojo extends AbstractDockerMojo {
     }
   }
 
-  private void buildImage(DockerClient docker, String buildDir)
+  private void buildImage(final DockerClient docker, final String buildDir, final
+                          DockerClient.BuildParameter... buildParameters)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
     getLog().info("Building image " + imageName);
-    docker.build(Paths.get(buildDir), imageName, new AnsiProgressHandler());
+    docker.build(Paths.get(buildDir), imageName, new AnsiProgressHandler(), buildParameters);
     getLog().info("Built " + imageName);
   }
 
@@ -477,7 +483,8 @@ public class BuildMojo extends AbstractDockerMojo {
     }
   }
 
-  private void createDockerFile(String directory, List<String> filesToAdd) throws IOException {
+  private void createDockerFile(final String directory, final List<String> filesToAdd)
+      throws IOException {
 
     final List<String> commands = newArrayList();
     if (baseImage != null) {
@@ -592,5 +599,13 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     return allCopiedPaths;
+  }
+
+  private DockerClient.BuildParameter[] buildParams() {
+    final List<DockerClient.BuildParameter> buildParams = Lists.newArrayList();
+    if (pullOnBuild) {
+      buildParams.add(DockerClient.BuildParameter.PULL_NEWER_IMAGE);
+    }
+    return buildParams.toArray(new DockerClient.BuildParameter[buildParams.size()]);
   }
 }
