@@ -37,54 +37,56 @@ import static org.mockito.Mockito.verify;
 
 public class RemoveImageMojoTest extends AbstractMojoTestCase {
 
-    public void testRemoveImage() throws Exception {
-        final File pom = getTestFile("src/test/resources/pom-removeImage.xml");
-        assertNotNull("Null pom.xml", pom);
-        assertTrue("pom.xml does not exist", pom.exists());
+  public void testRemoveImage() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-removeImage.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
 
-        final RemoveImageMojo mojo = (RemoveImageMojo) lookupMojo("removeImage", pom);
-        assertNotNull(mojo);
-        final DockerClient docker = mock(DockerClient.class);
-        mojo.execute(docker);
-        verify(docker).removeImage("imageToRemove", true, false);
+    final RemoveImageMojo mojo = (RemoveImageMojo) lookupMojo("removeImage", pom);
+    assertNotNull(mojo);
+    final DockerClient docker = mock(DockerClient.class);
+    mojo.execute(docker);
+    verify(docker).removeImage("imageToRemove", true, false);
+  }
+
+  public void testRemoveMissingImage() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-removeImage.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final RemoveImageMojo mojo = (RemoveImageMojo) lookupMojo("removeImage", pom);
+    assertNotNull(mojo);
+    final DockerClient docker = mock(DockerClient.class);
+    Mockito.when(docker.removeImage("imageToRemove", true, false))
+        .thenThrow(new ImageNotFoundException("imageToRemove"));
+    try {
+      mojo.execute(docker);
+      verify(docker).removeImage("imageToRemove", true, false);
+    } catch (DockerException e){
+      assertFalse("image to remove was missing", e instanceof ImageNotFoundException);
     }
+  }
 
-    public void testRemoveMissingImage() throws Exception {
-    	final File pom = getTestFile("src/test/resources/pom-removeImage.xml");
-        assertNotNull("Null pom.xml", pom);
-        assertTrue("pom.xml does not exist", pom.exists());
+  public void testRemoveImageWithTags() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-removeMultipleImages.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
 
-        final RemoveImageMojo mojo = (RemoveImageMojo) lookupMojo("removeImage", pom);
-        assertNotNull(mojo);
-        final DockerClient docker = mock(DockerClient.class);
-        Mockito.when(docker.removeImage("imageToRemove", true, false)).thenThrow(new ImageNotFoundException("imageToRemove"));
-        try {
-            mojo.execute(docker);
-            verify(docker).removeImage("imageToRemove", true, false);
-        }
-        catch (DockerException e){
-        	assertFalse("image to remove was missing", e instanceof ImageNotFoundException); 
-        }
+    final RemoveImageMojo mojo = (RemoveImageMojo) lookupMojo("removeImage", pom);
+    assertNotNull(mojo);
+    final DockerClient docker = mock(DockerClient.class);
+    Mockito.when(docker.removeImage("imageToRemove", true, false))
+        .thenThrow(new ImageNotFoundException("imageToRemove"));
+    Mockito.when(docker.removeImage("imageToRemove:123456", true, false))
+        .thenThrow(new ImageNotFoundException("imageToRemove:123456"));
+    Mockito.when(docker.removeImage("imageToRemove:bbbbbbb", true, false))
+        .thenReturn(new ArrayList<RemovedImage>());
+    try {
+      mojo.execute(docker);
+    } catch (DockerException e){
+      assertFalse("image to remove was missing", e instanceof ImageNotFoundException);
     }
-    
-    public void testRemoveImageWithTags() throws Exception {
-    	final File pom = getTestFile("src/test/resources/pom-removeMultipleImages.xml");
-        assertNotNull("Null pom.xml", pom);
-        assertTrue("pom.xml does not exist", pom.exists());
-
-        final RemoveImageMojo mojo = (RemoveImageMojo) lookupMojo("removeImage", pom);
-        assertNotNull(mojo);
-        final DockerClient docker = mock(DockerClient.class);
-        Mockito.when(docker.removeImage("imageToRemove", true, false)).thenThrow(new ImageNotFoundException("imageToRemove"));
-        Mockito.when(docker.removeImage("imageToRemove:123456", true, false)).thenThrow(new ImageNotFoundException("imageToRemove:123456"));
-        Mockito.when(docker.removeImage("imageToRemove:bbbbbbb", true, false)).thenReturn(new ArrayList<RemovedImage>());
-        try {
-            mojo.execute(docker);
-        }
-        catch (DockerException e){
-             assertFalse("image to remove was missing", e instanceof ImageNotFoundException); 
-        }
-        verify(docker).removeImage("imageToRemove:123456", true, false);
-        verify(docker).removeImage("imageToRemove:bbbbbbb", true, false);
-    }
+    verify(docker).removeImage("imageToRemove:123456", true, false);
+    verify(docker).removeImage("imageToRemove:bbbbbbb", true, false);
+  }
 }

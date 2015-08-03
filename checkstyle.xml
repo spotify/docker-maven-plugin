@@ -36,8 +36,8 @@ page at http://checkstyle.sourceforge.net/config.html -->
     <!-- Checks that TODOs are named.  (Actually, just that they are followed
          by an open paren.)
     -->
-    <property name="format" value="((//.*)|(\*.*))TODO[^(]" />
-    <property name="message" value='All TODOs should be named.  e.g. "TODO(johndoe): Refactor when v2 is released."' />
+    <property name="format" value="((//.*)|(\*.*))TODO [^(]" />
+    <property name="message" value='All TODOs should be named.  e.g. "TODO (johndoe): Refactor when v2 is released."' />
   </module>
 
   <!-- All Java AST specific tests live under TreeWalker module. -->
