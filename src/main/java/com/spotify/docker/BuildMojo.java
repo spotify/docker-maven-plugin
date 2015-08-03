@@ -54,6 +54,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +118,22 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(property = "dockerCmd")
   private String cmd;
 
+  /** The workdir for the image. Ignored if dockerDirectory is set */
+  @Parameter(property = "workdir")
+  private String workdir;
+
+  /** The user for the image. Ignored if dockerDirectory is set */
+  @Parameter(property = "user")
+  private String user;
+
+  /** 
+   * The run commands for the image. 
+   *  */
+  @Parameter(property = "dockerRuns")
+  private List<String> runs;
+  
+  private List<String> runList;
+  
   /** All resources will be copied to this directory before building the image. */
   @Parameter(property = "project.build.directory")
   protected String buildDirectory;
@@ -210,6 +227,7 @@ public class BuildMojo extends AbstractDockerMojo {
     // Put the list of exposed ports into a TreeSet which will remove duplicates and keep them
     // in a sorted order. This is useful when we merge with ports defined in the profile.
     exposesSet = new TreeSet<String>(exposes);
+    runList = new ArrayList<String>(runs);
     expressionEvaluator = new PluginParameterExpressionEvaluator(session, execution);
 
     final Git git = new Git();
@@ -404,11 +422,22 @@ public class BuildMojo extends AbstractDockerMojo {
       exposesSet.add(expand(raw));
     }
 
+    List<String> runListTmp = emptyList();
+    try {
+        runListTmp = profileConfig.getStringList("runs");
+    } catch (ConfigException.Missing ignore) {
+    }
+    for (final String raw : runListTmp) {
+         runList.add(raw);
+    }
+    
     // Simple properties
     imageName = get(imageName, profileConfig, "imageName");
     baseImage = get(baseImage, profileConfig, "baseImage");
     entryPoint = get(entryPoint, profileConfig, "entryPoint");
     cmd = get(cmd, profileConfig, "cmd");
+    workdir = get(workdir, profileConfig, "workdir");
+    user = get(user, profileConfig, "user");
   }
 
   private String get(final String override, final Config config, final String path)
@@ -456,6 +485,15 @@ public class BuildMojo extends AbstractDockerMojo {
       if (cmd != null) {
         getLog().warn("Ignoring cmd because dockerDirectory is set");
       }
+      if (runList != null && !runList.isEmpty()) {
+        getLog().warn("Ignoring run because dockerDirectory is set");
+      }
+      if (workdir != null) {
+          getLog().warn("Ignoring workdir because dockerDirectory is set");
+        }
+      if (user != null) {
+          getLog().warn("Ignoring user because dockerDirectory is set");
+        }
     }
   }
 
@@ -486,42 +524,6 @@ public class BuildMojo extends AbstractDockerMojo {
     if (maintainer != null) {
       commands.add("MAINTAINER " + maintainer);
     }
-    if (entryPoint != null) {
-      commands.add("ENTRYPOINT " + entryPoint);
-    }
-    if (cmd != null) {
-      // TODO(dano): we actually need to check whether the base image has an entrypoint
-      if (entryPoint != null) {
-        // CMD needs to be a list of arguments if ENTRYPOINT is set.
-        if (cmd.startsWith("[") && cmd.endsWith("]")) {
-          // cmd seems to be an argument list, so we're good
-          commands.add("CMD " + cmd);
-        } else {
-          // cmd does not seem to be an argument list, so try to generate one.
-          final List<String> args = ImmutableList.copyOf(
-              Splitter.on(WHITESPACE).omitEmptyStrings().split(cmd));
-          final StringBuilder cmdBuilder = new StringBuilder("[");
-          for (String arg : args) {
-            cmdBuilder.append('"').append(arg).append('"');
-          }
-          cmdBuilder.append(']');
-          final String cmdString = cmdBuilder.toString();
-          commands.add("CMD " + cmdString);
-          getLog().warn("Entrypoint provided but cmd is not an explicit list. Attempting to " +
-                        "generate CMD string in the form of an argument list.");
-          getLog().warn("CMD " + cmdString);
-        }
-      } else {
-        // no ENTRYPOINT set so use cmd verbatim
-        commands.add("CMD " + cmd);
-      }
-    } else {
-      commands.add("CMD []");
-    }
-
-    for (String file : filesToAdd) {
-      commands.add(String.format("ADD %s %s", file, file));
-    }
 
     if (env != null) {
       final List<String> sortedKeys = Ordering.natural().sortedCopy(env.keySet());
@@ -531,11 +533,61 @@ public class BuildMojo extends AbstractDockerMojo {
       }
     }
 
+    if (workdir != null) {
+        commands.add("WORKDIR " + workdir);
+    }
+
+    for (String file : filesToAdd) {
+        commands.add(String.format("ADD %s %s", file, file));
+    }
+
+    if (runList != null && !runList.isEmpty()) {
+        commands.add("RUN " + Joiner.on(" &&\\\n\t").join(runList));
+    }
+
+
     if (exposesSet.size() > 0) {
       // The values will be sorted with no duplicated since exposesSet is a TreeSet
       commands.add("EXPOSE " + Joiner.on(" ").join(exposesSet));
     }
 
+    if (user != null) {
+        commands.add("USER " + user);
+    }
+
+    if (entryPoint != null) {
+        commands.add("ENTRYPOINT " + entryPoint);
+      }
+      if (cmd != null) {
+        // TODO(dano): we actually need to check whether the base image has an entrypoint
+        if (entryPoint != null) {
+          // CMD needs to be a list of arguments if ENTRYPOINT is set.
+          if (cmd.startsWith("[") && cmd.endsWith("]")) {
+            // cmd seems to be an argument list, so we're good
+            commands.add("CMD " + cmd);
+          } else {
+            // cmd does not seem to be an argument list, so try to generate one.
+            final List<String> args = ImmutableList.copyOf(
+                Splitter.on(WHITESPACE).omitEmptyStrings().split(cmd));
+            final StringBuilder cmdBuilder = new StringBuilder("[");
+            for (String arg : args) {
+              cmdBuilder.append('"').append(arg).append('"');
+            }
+            cmdBuilder.append(']');
+            final String cmdString = cmdBuilder.toString();
+            commands.add("CMD " + cmdString);
+            getLog().warn("Entrypoint provided but cmd is not an explicit list. Attempting to " +
+                          "generate CMD string in the form of an argument list.");
+            getLog().warn("CMD " + cmdString);
+          }
+        } else {
+          // no ENTRYPOINT set so use cmd verbatim
+          commands.add("CMD " + cmd);
+        }
+      } else {
+        commands.add("CMD []");
+      }
+    
     // this will overwrite an existing file
     Files.createDirectories(Paths.get(directory));
     Files.write(Paths.get(directory, "Dockerfile"), commands, UTF_8);
@@ -565,19 +617,31 @@ public class BuildMojo extends AbstractDockerMojo {
       }
 
       final List<String> copiedPaths = newArrayList();
+      
+      boolean copyWholeDir = includes.isEmpty() && excludes.isEmpty() && 
+              resource.getTargetPath() != null;
 
+      // file location relative to docker directory, used later to generate Dockerfile
+      final String targetPath = resource.getTargetPath() == null ? "" : resource.getTargetPath();
+      
       for (String included : scanner.getIncludedFiles()) {
         final Path sourcePath = Paths.get(resource.getDirectory(), included);
-        final String targetPath = resource.getTargetPath() == null ? "" : resource.getTargetPath();
         final Path destPath = Paths.get(destination, targetPath, included);
         getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));
         // ensure all directories exist because copy operation will fail if they don't
         Files.createDirectories(destPath.getParent());
         Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING,
                    StandardCopyOption.COPY_ATTRIBUTES);
-        // file location relative to docker directory, used later to generate Dockerfile
-        final Path relativePath = Paths.get(targetPath, included);
-        copiedPaths.add(relativePath.toString());
+        
+        if (!copyWholeDir) {
+            final Path relativePath = Paths.get(targetPath, included);
+            copiedPaths.add(unixPath(relativePath));
+        }
+      }
+      
+      if (copyWholeDir) {
+          final Path relativePath = Paths.get(targetPath);
+          copiedPaths.add(unixPath(relativePath));
       }
 
       // The list of included files returned from DirectoryScanner can be in a different order
@@ -593,4 +657,28 @@ public class BuildMojo extends AbstractDockerMojo {
 
     return allCopiedPaths;
   }
+
+    /**
+     * When running on windows, paths are backslash separated,
+     * we need to convert them to unix '/' separated paths.
+     * 
+     * @param path
+     *            object (system specific)
+     * @return unix style path
+     */
+    private String unixPath(Path path) {
+        StringBuilder sb = new StringBuilder();
+        String pathString = path.toString();
+        if (path.isAbsolute() || pathString.startsWith("/") || pathString.startsWith("\\")) {
+            sb.append("/");
+        }
+        for (int i = 0; i < path.getNameCount(); i++) {
+            Path elem = path.getName(i);
+            if (i > 0) {
+                sb.append("/");
+            }
+            sb.append(elem.toString());
+        }
+        return sb.toString();
+    }
 }
