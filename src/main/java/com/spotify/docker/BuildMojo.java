@@ -53,7 +53,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.FileTime;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -293,7 +292,9 @@ public class BuildMojo extends AbstractDockerMojo {
 
     // Write image info file
     final Path imageInfoPath = Paths.get(tagInfoFile);
-    Files.createDirectories(imageInfoPath.getParent());
+    if (imageInfoPath.getParent() != null) {
+      Files.createDirectories(imageInfoPath.getParent());
+    }
     Files.write(imageInfoPath, buildInfo.toJsonBytes());
 
     if ("docker".equals(mavenProject.getPackaging())) {
@@ -629,8 +630,8 @@ public class BuildMojo extends AbstractDockerMojo {
         getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));
         // ensure all directories exist because copy operation will fail if they don't
         Files.createDirectories(destPath.getParent());
-        Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
-        Files.setLastModifiedTime(destPath, FileTime.fromMillis(1));
+        Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING,
+                   StandardCopyOption.COPY_ATTRIBUTES);
         
         if (!copyWholeDir) {
             final Path relativePath = Paths.get(targetPath, included);
