@@ -317,7 +317,7 @@ public class BuildMojo extends AbstractDockerMojo {
 
     final Config config = ConfigFactory.load();
 
-    defaultProfile = get(defaultProfile, config, "docker.build.defaultProfile");
+    defaultProfile = get(defaultProfile, config, "dockerMavenPlugin.build.defaultProfile");
 
     if (profile == null) {
       if (defaultProfile == null) {
@@ -333,7 +333,7 @@ public class BuildMojo extends AbstractDockerMojo {
 
     Config profiles;
     try {
-      profiles = config.getConfig("docker.build.profiles");
+      profiles = config.getConfig("dockerMavenPlugin.build.profiles");
     } catch (ConfigException.Missing e) {
       profiles = ConfigFactory.empty();
     }
