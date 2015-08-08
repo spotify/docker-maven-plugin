@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
@@ -59,7 +60,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -78,6 +78,16 @@ import static java.util.Collections.emptyList;
  */
 @Mojo(name = "build")
 public class BuildMojo extends AbstractDockerMojo {
+
+  /**
+   * The Unix separator character.
+   */
+  private static final char UNIX_SEPARATOR = '/';
+
+  /**
+   * The Windows separator character.
+   */
+  private static final char WINDOWS_SEPARATOR = '\\';
 
   /**
    * Directory containing the Dockerfile. If the value is not set, the plugin will generate a
@@ -124,6 +134,22 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(property = "dockerCmd")
   private String cmd;
 
+  /** The workdir for the image. Ignored if dockerDirectory is set */
+  @Parameter(property = "workdir")
+  private String workdir;
+
+  /** The user for the image. Ignored if dockerDirectory is set */
+  @Parameter(property = "user")
+  private String user;
+
+  /**
+   * The run commands for the image.
+   */
+  @Parameter(property = "dockerRuns")
+  private List<String> runs;
+
+  private List<String> runList;
+
   /** All resources will be copied to this directory before building the image. */
   @Parameter(property = "project.build.directory")
   protected String buildDirectory;
@@ -136,7 +162,7 @@ public class BuildMojo extends AbstractDockerMojo {
    * Default is ${project.build.testOutputDirectory}/image_info.json
    */
   @Parameter(property = "tagInfoFile",
-              defaultValue = "${project.build.testOutputDirectory}/image_info.json")
+      defaultValue = "${project.build.testOutputDirectory}/image_info.json")
   protected String tagInfoFile;
 
   /**
@@ -165,6 +191,7 @@ public class BuildMojo extends AbstractDockerMojo {
   private String imageName;
 
   /** Additional tags to tag the image with. */
+  @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
   @Parameter(property = "dockerImageTags")
   private List<String> imageTags;
 
@@ -216,7 +243,10 @@ public class BuildMojo extends AbstractDockerMojo {
 
     // Put the list of exposed ports into a TreeSet which will remove duplicates and keep them
     // in a sorted order. This is useful when we merge with ports defined in the profile.
-    exposesSet = new TreeSet<>(exposes);
+    exposesSet = Sets.newTreeSet(exposes);
+    if (runs != null) {
+      runList = Lists.newArrayList(runs);
+    }
     expressionEvaluator = new PluginParameterExpressionEvaluator(session, execution);
 
     final Git git = new Git();
@@ -224,7 +254,7 @@ public class BuildMojo extends AbstractDockerMojo {
 
     if (commitId == null) {
       final String errorMessage =
-        "Not a git repository, cannot get commit ID. Make sure git repository is initialized.";
+          "Not a git repository, cannot get commit ID. Make sure git repository is initialized.";
       if (useGitCommitId || ((imageName != null) && imageName.contains("${gitShortCommitId}"))) {
         throw new MojoExecutionException(errorMessage);
       } else {
@@ -409,11 +439,18 @@ public class BuildMojo extends AbstractDockerMojo {
       exposesSet.add(expand(raw));
     }
 
+    try {
+      runList.addAll(profileConfig.getStringList("runs"));
+    } catch (ConfigException.Missing ignore) {
+    }
+
     // Simple properties
     imageName = get(imageName, profileConfig, "imageName");
     baseImage = get(baseImage, profileConfig, "baseImage");
     entryPoint = get(entryPoint, profileConfig, "entryPoint");
     cmd = get(cmd, profileConfig, "cmd");
+    workdir = get(workdir, profileConfig, "workdir");
+    user = get(user, profileConfig, "user");
   }
 
   private String get(final String override, final Config config, final String path)
@@ -461,11 +498,20 @@ public class BuildMojo extends AbstractDockerMojo {
       if (cmd != null) {
         getLog().warn("Ignoring cmd because dockerDirectory is set");
       }
+      if (runList != null && !runList.isEmpty()) {
+        getLog().warn("Ignoring run because dockerDirectory is set");
+      }
+      if (workdir != null) {
+        getLog().warn("Ignoring workdir because dockerDirectory is set");
+      }
+      if (user != null) {
+        getLog().warn("Ignoring user because dockerDirectory is set");
+      }
     }
   }
 
-  private void buildImage(final DockerClient docker, final String buildDir, final
-                          DockerClient.BuildParameter... buildParameters)
+  private void buildImage(final DockerClient docker, final String buildDir,
+                          final DockerClient.BuildParameter... buildParameters)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
     getLog().info("Building image " + imageName);
     docker.build(Paths.get(buildDir), imageName, new AnsiProgressHandler(), buildParameters);
@@ -493,6 +539,38 @@ public class BuildMojo extends AbstractDockerMojo {
     if (maintainer != null) {
       commands.add("MAINTAINER " + maintainer);
     }
+
+    if (env != null) {
+      final List<String> sortedKeys = Ordering.natural().sortedCopy(env.keySet());
+      for (String key : sortedKeys) {
+        final String value = env.get(key);
+        commands.add(String.format("ENV %s %s", key, value));
+      }
+    }
+
+    if (workdir != null) {
+      commands.add("WORKDIR " + workdir);
+    }
+
+    for (String file : filesToAdd) {
+      commands.add(String.format("ADD %s %s", file, file));
+    }
+
+    if (runList != null && !runList.isEmpty()) {
+      for (final String run : runList) {
+        commands.add("RUN " + run);
+      }
+    }
+
+    if (exposesSet.size() > 0) {
+      // The values will be sorted with no duplicated since exposesSet is a TreeSet
+      commands.add("EXPOSE " + Joiner.on(" ").join(exposesSet));
+    }
+
+    if (user != null) {
+      commands.add("USER " + user);
+    }
+
     if (entryPoint != null) {
       commands.add("ENTRYPOINT " + entryPoint);
     }
@@ -526,23 +604,6 @@ public class BuildMojo extends AbstractDockerMojo {
       commands.add("CMD []");
     }
 
-    for (String file : filesToAdd) {
-      commands.add(String.format("ADD %s %s", file, file));
-    }
-
-    if (env != null) {
-      final List<String> sortedKeys = Ordering.natural().sortedCopy(env.keySet());
-      for (String key : sortedKeys) {
-        final String value = env.get(key);
-        commands.add(String.format("ENV %s %s", key, value));
-      }
-    }
-
-    if (exposesSet.size() > 0) {
-      // The values will be sorted with no duplicated since exposesSet is a TreeSet
-      commands.add("EXPOSE " + Joiner.on(" ").join(exposesSet));
-    }
-
     // this will overwrite an existing file
     Files.createDirectories(Paths.get(directory));
     Files.write(Paths.get(directory, "Dockerfile"), commands, UTF_8);
@@ -573,18 +634,26 @@ public class BuildMojo extends AbstractDockerMojo {
 
       final List<String> copiedPaths = newArrayList();
 
-      for (String included : scanner.getIncludedFiles()) {
-        final Path sourcePath = Paths.get(resource.getDirectory(), included);
-        final String targetPath = resource.getTargetPath() == null ? "" : resource.getTargetPath();
-        final Path destPath = Paths.get(destination, targetPath, included);
-        getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));
-        // ensure all directories exist because copy operation will fail if they don't
-        Files.createDirectories(destPath.getParent());
-        Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING,
-                   StandardCopyOption.COPY_ATTRIBUTES);
-        // file location relative to docker directory, used later to generate Dockerfile
-        final Path relativePath = Paths.get(targetPath, included);
-        copiedPaths.add(relativePath.toString());
+      boolean copyWholeDir = includes.isEmpty() && excludes.isEmpty() &&
+                             resource.getTargetPath() != null;
+
+      // file location relative to docker directory, used later to generate Dockerfile
+      final String targetPath = resource.getTargetPath() == null ? "" : resource.getTargetPath();
+
+      if (copyWholeDir) {
+        copiedPaths.add(separatorsToUnix(targetPath));
+      } else {
+        for (String included : includedFiles) {
+          final Path sourcePath = Paths.get(resource.getDirectory(), included);
+          final Path destPath = Paths.get(destination, targetPath, included);
+          getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));
+          // ensure all directories exist because copy operation will fail if they don't
+          Files.createDirectories(destPath.getParent());
+          Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING,
+                     StandardCopyOption.COPY_ATTRIBUTES);
+
+          copiedPaths.add(separatorsToUnix(Paths.get(targetPath, included).toString()));
+        }
       }
 
       // The list of included files returned from DirectoryScanner can be in a different order
@@ -599,6 +668,19 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     return allCopiedPaths;
+  }
+
+  /**
+   * Converts all separators to the Unix separator of forward slash.
+   *
+   * @param path  the path to be changed, null ignored
+   * @return the updated path
+   */
+  public static String separatorsToUnix(final String path) {
+    if (path == null || path.indexOf(WINDOWS_SEPARATOR) == -1) {
+      return path;
+    }
+    return path.replace(WINDOWS_SEPARATOR, UNIX_SEPARATOR);
   }
 
   private DockerClient.BuildParameter[] buildParams() {
