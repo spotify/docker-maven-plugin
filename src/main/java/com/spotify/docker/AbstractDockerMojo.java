@@ -55,6 +55,9 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   @Component
   private Settings settings;
 
+  /**
+   * @see <a href="https://issues.apache.org/jira/browse/MNG-4384">https://issues.apache.org/jira/browse/MNG-4384</a>
+   */
   @Component(role = SecDispatcher.class, hint = "mng-4384")
   private SecDispatcher secDispatcher;
 

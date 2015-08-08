@@ -32,7 +32,7 @@ public class SettingsStub extends Settings {
         Server server = new Server();
         server.setId("docker-hub");
         server.setUsername("dxia3");
-        // encrypted value is: SxpxdUQA2mvX7oj
+        // plaintext value is: SxpxdUQA2mvX7oj
         server.setPassword("{gc4QPLrlgPwHZjAhPw8JPuGzaPitzuyjeBojwCz88j4=}");
         Xpp3Dom configuration = new Xpp3Dom("configuration");
         Xpp3Dom email = new Xpp3Dom("email");
