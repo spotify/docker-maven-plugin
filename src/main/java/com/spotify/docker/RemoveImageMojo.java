@@ -53,7 +53,7 @@ public class RemoveImageMojo extends AbstractDockerMojo {
   /**
    * Additional tags to tag the image with.
    */
-  @Parameter(property = "dockerImageTags")
+  @Parameter(property = "imageTags")
   private List<String> imageTags;
 
   protected void execute(final DockerClient docker)

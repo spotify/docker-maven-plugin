@@ -91,8 +91,9 @@ public class BuildMojo extends AbstractDockerMojo {
 
   /**
    * Directory containing the Dockerfile. If the value is not set, the plugin will generate a
-   * Dockerfile using the required baseImage value, plus the optional entryPoint, cmd and maintainer
-   * values. If this value is set the plugin will use the Dockerfile in the specified folder.
+   * Dockerfile using the required baseImage value, plus the optional entryPoint, cmd and 
+   * maintainer values. If this value is set the plugin will use the Dockerfile in the specified 
+   * folder.
    */
   @Parameter(property = "dockerDirectory")
   private String dockerDirectory;
@@ -119,19 +120,19 @@ public class BuildMojo extends AbstractDockerMojo {
   private boolean forceTags;
 
   /** The maintainer of the image. Ignored if dockerDirectory is set. */
-  @Parameter(property = "dockerMaintainer")
+  @Parameter(property = "maintainer")
   private String maintainer;
 
   /** The base image to use. Ignored if dockerDirectory is set. */
-  @Parameter(property = "dockerBaseImage")
+  @Parameter(property = "baseImage")
   private String baseImage;
 
   /** The entry point of the image. Ignored if dockerDirectory is set. */
-  @Parameter(property = "dockerEntryPoint")
+  @Parameter(property = "entryPoint")
   private String entryPoint;
 
   /** The cmd command for the image. Ignored if dockerDirectory is set. */
-  @Parameter(property = "dockerCmd")
+  @Parameter(property = "cmd")
   private String cmd;
 
   /** The workdir for the image. Ignored if dockerDirectory is set */
@@ -145,7 +146,7 @@ public class BuildMojo extends AbstractDockerMojo {
   /**
    * The run commands for the image.
    */
-  @Parameter(property = "dockerRuns")
+  @Parameter(property = "runs")
   private List<String> runs;
 
   private List<String> runList;
@@ -154,7 +155,7 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(property = "project.build.directory")
   protected String buildDirectory;
 
-  @Parameter(property = "dockerBuildProfile")
+  @Parameter(property = "profile")
   private String profile;
 
   /**
