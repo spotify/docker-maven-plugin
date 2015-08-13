@@ -21,13 +21,11 @@
 
 package com.spotify.docker;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.spotify.docker.client.DefaultDockerClient.NO_TIMEOUT;
-
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificateException;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.AuthConfig;
+
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
@@ -39,6 +37,9 @@ import org.apache.maven.settings.Settings;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
+
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.spotify.docker.client.DefaultDockerClient.NO_TIMEOUT;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
@@ -173,7 +174,10 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         final AuthConfig.Builder authConfigBuilder = AuthConfig.builder();
 
         final String username = server.getUsername();
-        final String password = secDispatcher.decrypt(server.getPassword());
+        String password = server.getPassword();
+        if (secDispatcher != null) {
+          password = secDispatcher.decrypt(password);
+        }
         final String email = getEmail(server);
 
         if (incompleteAuthSettings(username, password, email)) {
