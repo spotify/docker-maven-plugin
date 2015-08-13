@@ -37,6 +37,8 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
+import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
@@ -52,6 +54,12 @@ abstract class AbstractDockerMojo extends AbstractMojo {
    */
   @Component
   private Settings settings;
+
+  /**
+   * https://issues.apache.org/jira/browse/MNG-4384
+   */
+  @Component(role = SecDispatcher.class, hint = "mng-4384")
+  private SecDispatcher secDispatcher;
 
   /**
    * URL of the docker host as specified in pom.xml.
@@ -75,40 +83,10 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         builder.uri(dockerHost);
       }
 
-      if (settings != null) {
-        final Server server = settings.getServer(serverId);
-        if (server != null) {
-          final AuthConfig.Builder authConfigBuilder = AuthConfig.builder();
-
-          final String username = server.getUsername();
-          final String password = server.getPassword();
-          final String email = getEmail(server);
-
-          if (incompleteAuthSettings(username, password, email)) {
-            throw new MojoExecutionException(
-                "Incomplete Docker registry authorization credentials. "
-                + "Please provide all of username, password, and email or none.");
-          }
-
-          if (!isNullOrEmpty(username)) {
-            authConfigBuilder.username(username);
-          }
-          if (!isNullOrEmpty(email)) {
-            authConfigBuilder.email(email);
-          }
-          if (!isNullOrEmpty(password)) {
-            authConfigBuilder.password(password);
-          }
-          // registryUrl is optional.
-          // Spotify's docker-client defaults to 'https://index.docker.io/v1/'.
-          if (!isNullOrEmpty(registryUrl)) {
-            authConfigBuilder.serverAddress(registryUrl);
-          }
-
-          builder.authConfig(authConfigBuilder.build());
-        }
+      final AuthConfig authConfig = authConfig();
+      if (authConfig != null) {
+        builder.authConfig(authConfig);
       }
-
 
       client = builder.build();
       execute(client);
@@ -180,5 +158,48 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     return (!isNullOrEmpty(username) || !isNullOrEmpty(password) || !isNullOrEmpty(email))
            && (isNullOrEmpty(username) || isNullOrEmpty(password) || isNullOrEmpty(email));
 
+  }
+
+  /**
+   * Builds the AuthConfig object from server details.
+   * @return AuthConfig
+   * @throws MojoExecutionException
+   * @throws SecDispatcherException
+   */
+  protected AuthConfig authConfig() throws MojoExecutionException, SecDispatcherException {
+    if (settings != null) {
+      final Server server = settings.getServer(serverId);
+      if (server != null) {
+        final AuthConfig.Builder authConfigBuilder = AuthConfig.builder();
+
+        final String username = server.getUsername();
+        final String password = secDispatcher.decrypt(server.getPassword());
+        final String email = getEmail(server);
+
+        if (incompleteAuthSettings(username, password, email)) {
+          throw new MojoExecutionException(
+                  "Incomplete Docker registry authorization credentials. "
+                          + "Please provide all of username, password, and email or none.");
+        }
+
+        if (!isNullOrEmpty(username)) {
+          authConfigBuilder.username(username);
+        }
+        if (!isNullOrEmpty(email)) {
+          authConfigBuilder.email(email);
+        }
+        if (!isNullOrEmpty(password)) {
+          authConfigBuilder.password(password);
+        }
+        // registryUrl is optional.
+        // Spotify's docker-client defaults to 'https://index.docker.io/v1/'.
+        if (!isNullOrEmpty(registryUrl)) {
+          authConfigBuilder.serverAddress(registryUrl);
+        }
+
+        return authConfigBuilder.build();
+      }
+    }
+    return null;
   }
 }

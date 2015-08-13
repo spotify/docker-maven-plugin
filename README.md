@@ -159,6 +159,19 @@ Now use the server id in your project `pom.xml`.
 `<registryUrl></registryUrl>` is optional and defaults to `https://index.docker.io/v1/` in the
 Spotify docker-client dependency.
 
+#### Using encrypted passwords for authentication
+
+Credentials can be encrypted using [Maven's built in encryption function.](https://maven.apache.org/guides/mini/guide-encryption.html)
+Only passwords enclosed in curly braces will be considered as encrypted.
+
+    <servers>
+      <server>
+        <id>docker-hub</id>
+        <username>foo</username>
+        <password>{gc4QPLrlgPwHZjAhPw8JPuGzaPitzuyjeBojwCz88j4=}</password>
+      </server>
+    </servers>
+
 ## Releasing
 
 Commits to the master branch will trigger our continuous integration agent to build the jar and
