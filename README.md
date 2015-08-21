@@ -172,6 +172,10 @@ Only passwords enclosed in curly braces will be considered as encrypted.
       </server>
     </servers>
 
+## Testing
+
+Make sure Docker daemon is running and that you can do `docker ps`. Then run `mvn clean test`.
+
 ## Releasing
 
 Commits to the master branch will trigger our continuous integration agent to build the jar and
