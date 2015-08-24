@@ -132,6 +132,56 @@ public class BuildMojoTest extends AbstractMojoTestCase {
                          any(AnsiProgressHandler.class), any(DockerClient.BuildParameter.class));
   }
 
+  public void testBuildWithPushTag() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-push-tag.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+    mojo.execute(docker);
+
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+                         any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:latest"), any(AnsiProgressHandler.class));
+  }
+
+  public void testBuildWithMultiplePushTag() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-push-tags.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+    mojo.execute(docker);
+
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+                         any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:late"), any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:later"), any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:latest"), any(AnsiProgressHandler.class));
+  }
+
+  public void testBuildWithInvalidPushTag() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-missing-push-tags.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+
+    try {
+      mojo.execute(docker);
+      fail("mojo should have thrown exception because imageTag is not defined in pom");
+    } catch (MojoExecutionException e) {
+      final String message = "You have used option \"pushImageTag\" but have"
+                              + " not specified an \"imageTag\" in your"
+                              + " docker-maven-client's plugin configuration" ;
+      assertTrue(String.format("Exception message should have contained '%s'", message),
+                 e.getMessage().contains(message));
+    }
+  }
+
   public void testBuildWithGeneratedDockerfile() throws Exception {
     final File pom = getTestFile("src/test/resources/pom-build-generated-dockerfile.xml");
     assertNotNull("Null pom.xml", pom);

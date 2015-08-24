@@ -29,6 +29,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
 import java.io.IOException;
+import java.util.List;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -65,4 +66,20 @@ public class Utils {
       docker.push(imageName, new AnsiProgressHandler());
   }
 
+  // push just the tags listed in the pom rather than all images using imageName
+  public static void pushImageTag(DockerClient docker, String imageName,
+                                List<String> imageTags, Log log)
+      throws MojoExecutionException, DockerException, IOException, InterruptedException {
+      // tags should not be empty if you have specified the option to push tags
+      if (imageTags.isEmpty()) {
+        throw new MojoExecutionException("You have used option \"pushImageTag\" but have"
+                                         + " not specified an \"imageTag\" in your"
+                                         + " docker-maven-client's plugin configuration");
+      }
+      for (final String imageTag : imageTags) {
+       final String imageNameWithTag = imageName + ":" + imageTag;
+       log.info("Pushing " + imageName + ":" + imageTag);
+       docker.push(imageNameWithTag, new AnsiProgressHandler());
+      }
+  }
 }

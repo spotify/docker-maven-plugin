@@ -69,6 +69,7 @@ import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Ordering.natural;
 import static com.spotify.docker.Utils.parseImageName;
 import static com.spotify.docker.Utils.pushImage;
+import static com.spotify.docker.Utils.pushImageTag;
 import static com.typesafe.config.ConfigRenderOptions.concise;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
@@ -113,6 +114,10 @@ public class BuildMojo extends AbstractDockerMojo {
   /** Flag to push image after it is built. Defaults to false. */
   @Parameter(property = "pushImage", defaultValue = "false")
   private boolean pushImage;
+
+  /** Flag to push image using their tags after it is built. Defaults to false. */
+  @Parameter(property = "pushImageTag", defaultValue = "false")
+  private boolean pushImageTag;
 
   /** Flag to use force option while tagging. Defaults to false. */
   @Parameter(property = "forceTags", defaultValue = "false")
@@ -227,6 +232,10 @@ public class BuildMojo extends AbstractDockerMojo {
     return pushImage;
   }
 
+  public boolean getPushImageTag() {
+    return pushImageTag;
+  }
+
   public boolean getForceTags() {
     return forceTags;
   }
@@ -319,6 +328,11 @@ public class BuildMojo extends AbstractDockerMojo {
     if ("docker".equals(mavenProject.getPackaging())) {
       final File imageArtifact = createImageArtifact(mavenProject.getArtifact(), buildInfo);
       mavenProject.getArtifact().setFile(imageArtifact);
+    }
+
+    // Push specific tags specified in pom rather than all images
+    if (pushImageTag) {
+      pushImageTag(docker, imageName, imageTags, getLog());
     }
 
     if (pushImage) {

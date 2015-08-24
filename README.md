@@ -94,6 +94,41 @@ To push the image you just built to the registry, specify the `pushImage` flag.
 
     mvn clean package docker:build -DpushImage
 
+To push only specific tags of the image to the registry, specify the `pushImageTag` flag.
+
+    mvn clean package docker:build -DpushImageTag
+
+In order for this to succeed, at least one imageTag must be present in the config, multiple tags can be used.
+
+    <build>
+      <plugins>
+        ...
+        <plugin>
+          <groupId>com.spotify</groupId>
+          <artifactId>docker-maven-plugin</artifactId>
+          <version>VERSION GOES HERE</version>
+          <configuration>
+            <imageName>example</imageName>
+            <baseImage>java</baseImage>
+            <imageTags>
+               <imageTag>${project.version}</imageTag>
+               <imageTag>latest</imageTag>
+            </imageTags>
+            <entryPoint>["java", "-jar", "/${project.build.finalName}.jar"]</entryPoint>
+            <!-- copy the service's jar file from target into the root directory of the image -->
+            <resources>
+               <resource>
+                 <targetPath>/</targetPath>
+                 <directory>${project.build.directory}</directory>
+                 <include>${project.build.finalName}.jar</include>
+               </resource>
+            </resources>
+          </configuration>
+        </plugin>
+        ...
+      </plugins>
+    </build>
+
 By default the plugin will try to connect to docker on localhost:2375. Set the DOCKER_HOST 
 environment variable to connect elsewhere. 
 
