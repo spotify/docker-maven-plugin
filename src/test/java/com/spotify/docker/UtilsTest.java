@@ -85,7 +85,7 @@ public class UtilsTest {
   public void testPushImage() throws Exception {
     DockerClient dockerClient = mock(DockerClient.class);
     Log log = mock(Log.class);
-    Utils.pushImage(dockerClient, IMAGE, log);
+    Utils.pushImage(dockerClient, IMAGE, null, log);
 
     verify(dockerClient).push(eq(IMAGE), any(AnsiProgressHandler.class));
   }

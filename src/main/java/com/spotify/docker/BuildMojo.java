@@ -322,7 +322,7 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     if (pushImage) {
-      pushImage(docker, imageName, getLog());
+      pushImage(docker, imageName, imageTags, getLog());
     }
   }
 

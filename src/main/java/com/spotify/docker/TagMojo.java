@@ -121,7 +121,7 @@ public class TagMojo extends AbstractDockerMojo {
     }
 
     if (pushImage) {
-      pushImage(docker, newName, getLog());
+      pushImage(docker, newName, null, getLog());
     }
   }
 
