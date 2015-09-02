@@ -19,10 +19,10 @@ example, the build process for a Java service can output a Docker image that run
 
 ## Setup
 
-You can specify the base image, entry point, cmd, maintainer and files you want to add to your 
-image directly in the pom, without needing a separate `Dockerfile`. If you need other commands such 
-as `RUN` or `VOLUME`, then you will need to create a `Dockerfile` and use the `dockerDirectory`
-element.
+You can specify the base image, entry point, cmd, maintainer and files you want to add to your
+image directly in the pom, without needing a separate `Dockerfile`.
+If you need `VOLUME` command(or any other not supported dockerfile command), then you will need
+to create a `Dockerfile` and use the `dockerDirectory` element.
 
 ### Specify build info in the POM
 
