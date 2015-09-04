@@ -29,6 +29,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
 import java.io.IOException;
+import java.util.*;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -59,10 +60,30 @@ public class Utils {
     return new String[] { repo, tag };
   }
 
-  public static void pushImage(DockerClient docker, String imageName, Log log)
+  public static void pushImage(DockerClient docker,
+                               String imageName,
+                               List<String> imageTags,
+                               Log log)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
       log.info("Pushing " + imageName);
       docker.push(imageName, new AnsiProgressHandler());
+
+      if (imageTags != null) {
+        String imageNameNoTag = getImageNameWithNoTag(imageName);
+        for (String imageTag : imageTags) {
+          String imageNameAndTag = imageNameNoTag + ":" + imageTag;
+          log.info("Pushing " + imageNameAndTag);
+          docker.push(imageNameAndTag, new AnsiProgressHandler());
+        }
+      }
+  }
+
+  private static String getImageNameWithNoTag(String imageName) {
+      int tagSeparatorIndex = imageName.lastIndexOf(':');
+      if (tagSeparatorIndex >= 0) {
+        imageName = imageName.substring(0, tagSeparatorIndex);
+      }
+      return imageName;
   }
 
 }
