@@ -21,8 +21,12 @@
 
 package com.spotify.docker;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.ProgressHandler;
+import com.spotify.docker.client.messages.ProgressMessage;
 
 import org.apache.maven.execution.DefaultMavenExecutionRequest;
 import org.apache.maven.execution.MavenExecutionRequest;
@@ -33,6 +37,8 @@ import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,9 +56,12 @@ import java.util.Objects;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class BuildMojoTest extends AbstractMojoTestCase {
 
@@ -117,6 +126,42 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
                          any(AnsiProgressHandler.class));
     verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
+  }
+
+  public void testDigestWrittenOnBuildWithPush() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-push.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+
+    final String digest =
+        "sha256:ebd39c3e3962f804787f6b0520f8f1e35fbd5a01ab778ac14c8d6c37978e8445";
+    final ProgressMessage digestProgressMessage = new ProgressMessage().status(
+        "Digest: " + digest);
+
+    doAnswer(new Answer() {
+      @Override
+      public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+        final ProgressHandler handler = (ProgressHandler) invocationOnMock.getArguments()[1];
+        handler.progress(digestProgressMessage);
+        return null;
+      }
+    }).when(docker).push(anyString(), any(ProgressHandler.class));
+
+    mojo.execute(docker);
+
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+                         any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
+
+    assertFileExists(mojo.tagInfoFile);
+
+    final ObjectMapper objectMapper = new ObjectMapper();
+    final JsonNode node = objectMapper.readTree(new File(mojo.tagInfoFile));
+
+    assertEquals(digest, node.get("digest").asText());
   }
 
   public void testBuildWithPull() throws Exception {
