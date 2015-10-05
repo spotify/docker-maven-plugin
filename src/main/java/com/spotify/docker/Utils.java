@@ -76,7 +76,8 @@ public class Utils {
     docker.push(imageName, handler);
 
     if (buildInfo != null) {
-      buildInfo.setDigest(handler.digest());
+      final String imageNameWithoutTag = parseImageName(imageName)[0];
+      buildInfo.setDigest(imageNameWithoutTag + "@" + handler.digest());
     }
   }
 
