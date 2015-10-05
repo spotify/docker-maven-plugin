@@ -54,12 +54,18 @@ public class DockerBuildInformation {
   @JsonProperty("commit")
   private String commit;
 
+  @JsonProperty("digest")
+  private String digest;
 
   public DockerBuildInformation(final String image, final Log log) {
     this.image = image;
     updateGitInformation(log);
   }
 
+  public DockerBuildInformation setDigest(final String digest) {
+    this.digest = digest;
+    return this;
+  }
 
   private void updateGitInformation(Log log) {
     try {
@@ -95,5 +101,9 @@ public class DockerBuildInformation {
 
   public String getCommit(){
     return commit;
+  }
+
+  public String getDigest() {
+    return digest;
   }
 }

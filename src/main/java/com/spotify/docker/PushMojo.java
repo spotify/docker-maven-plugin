@@ -44,7 +44,7 @@ public class PushMojo extends AbstractDockerMojo {
 
   protected void execute(DockerClient docker)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
-    pushImage(docker, imageName, getLog());
+    pushImage(docker, imageName, getLog(), null);
   }
 
 }
