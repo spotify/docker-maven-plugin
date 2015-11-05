@@ -21,6 +21,7 @@
 
 package com.spotify.docker;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -41,9 +42,12 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.PluginParameterExpressionEvaluator;
-import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.filtering.MavenFilteringException;
+import org.apache.maven.shared.filtering.MavenResourcesExecution;
+import org.apache.maven.shared.filtering.MavenResourcesFiltering;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
 import org.codehaus.plexus.util.DirectoryScanner;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -52,9 +56,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
@@ -77,7 +79,6 @@ import static java.util.Collections.emptyList;
 /**
  * Used to build docker images.
  */
-@Mojo(name = "build")
 public class BuildMojo extends AbstractDockerMojo {
 
   /**
@@ -92,11 +93,27 @@ public class BuildMojo extends AbstractDockerMojo {
 
   /**
    * Directory containing the Dockerfile. If the value is not set, the plugin will generate a
-   * Dockerfile using the required baseImage value, plus the optional entryPoint, cmd and maintainer
+   * Dockerfile using the required baseImage value, plus the optional entryPoint, cmd and
+   * maintainer
    * values. If this value is set the plugin will use the Dockerfile in the specified folder.
+   * <p>
+   * To enable
+   * <a href="http://maven.apache.org/plugins/maven-resources-plugin/examples/filter.html">resource
+   * filtering</a> on this directory, set {@link #enableDockerDirectoryFiltering} to true.</p>
+   * @see #enableDockerDirectoryFiltering
    */
   @Parameter(property = "dockerDirectory")
   private String dockerDirectory;
+
+  /**
+   * Enables <a href="http://maven.apache.org/plugins/maven-resources-plugin/examples/filter.html">resource
+   * filtering</a> when copying the {@link #dockerDirectory}. Defaults to false.
+   * <p>
+   * Note that this can also be set independently on each {@link Resource} in {@link #resources};
+   * setting it at this level is useful if you need to filter the Dockerfile as well.</p>
+   */
+  @Parameter(property = "enableDockerDirectoryFiltering")
+  private boolean enableDockerDirectoryFiltering;
 
   /**
    * Flag to skip docker build, making build goal a no-op. This can be useful when docker:build
@@ -210,6 +227,9 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(defaultValue = "${project}")
   private MavenProject mavenProject;
 
+  @Component(role=MavenResourcesFiltering.class)
+  protected MavenResourcesFiltering mavenResourcesFiltering;
+
   private PluginParameterExpressionEvaluator expressionEvaluator;
 
   public BuildMojo() {
@@ -235,7 +255,7 @@ public class BuildMojo extends AbstractDockerMojo {
   @Override
   protected void execute(final DockerClient docker)
       throws MojoExecutionException, GitAPIException, IOException, DockerException,
-             InterruptedException {
+             InterruptedException, MavenFilteringException {
 
     if (skipDockerBuild) {
       getLog().info("Skipping docker build");
@@ -301,6 +321,7 @@ public class BuildMojo extends AbstractDockerMojo {
     } else {
       final Resource resource = new Resource();
       resource.setDirectory(dockerDirectory);
+      resource.setFiltering(enableDockerDirectoryFiltering);
       resources.add(resource);
       copyResources(destination);
     }
@@ -606,10 +627,50 @@ public class BuildMojo extends AbstractDockerMojo {
     Files.write(Paths.get(directory, "Dockerfile"), commands, UTF_8);
   }
 
-  private List<String> copyResources(String destination) throws IOException {
+  private List<Resource> resourcesForFiltering() {
+    return Lists.transform(this.resources, new Function<Resource, Resource>() {
+      @Override
+      public Resource apply( final Resource resource) {
+        if (resource.getTargetPath().startsWith("/")) {
+          // remove the leading "/" as MavenResourcesFiltering will interpret it as an absolute
+          // directory on the host
+          final Resource modified = resource.clone();
+          modified.setTargetPath(modified.getTargetPath().substring(1));
+          return modified;
+        }
+        return resource;
+      }
+    });
+  }
+
+  private List<String> copyResources(String destination) throws IOException,
+                                                                MavenFilteringException {
 
     final List<String> allCopiedPaths = newArrayList();
 
+    final List<String> nonFilteredFileExtensions = emptyList();
+    final List<String> fileFilters = null;
+
+    MavenResourcesExecution mavenResourcesExecution = new MavenResourcesExecution(resourcesForFiltering(),
+        new File(destination),
+        mavenProject,
+        null,
+        fileFilters,
+        nonFilteredFileExtensions,
+        session);
+    // to preserve backwards compatibility with old file copying methods, set resources base
+    // directory to the project basedir otherwise paths like `src/main/resources` would be appended
+    // to `${project.basedir}/src/main/resources`.
+    // TODO (mbrown): fix
+    final File basedir = new File(mavenProject.getBasedir(), "../../..");
+    mavenResourcesExecution.setResourcesBaseDirectory(basedir);
+
+    mavenResourcesFiltering.filterResources( mavenResourcesExecution );
+
+    // NOTE: we no longer do any actual file copying below; this is done in the filterResources
+    // method above.
+    // The logic for determining paths is preserved though as the return value of this method
+    // is needed when generating a Dockerfile, and filterResources() does not return anything.
     for (Resource resource : resources) {
       final File source = new File(resource.getDirectory());
       final List<String> includes = resource.getIncludes();
@@ -641,14 +702,6 @@ public class BuildMojo extends AbstractDockerMojo {
         copiedPaths.add(separatorsToUnix(targetPath));
       } else {
         for (String included : includedFiles) {
-          final Path sourcePath = Paths.get(resource.getDirectory(), included);
-          final Path destPath = Paths.get(destination, targetPath, included);
-          getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));
-          // ensure all directories exist because copy operation will fail if they don't
-          Files.createDirectories(destPath.getParent());
-          Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING,
-                     StandardCopyOption.COPY_ATTRIBUTES);
-
           copiedPaths.add(separatorsToUnix(Paths.get(targetPath, included).toString()));
         }
       }

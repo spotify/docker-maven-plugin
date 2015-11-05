@@ -21,6 +21,8 @@
 
 package com.spotify.docker;
 
+import com.google.common.io.Resources;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.docker.client.AnsiProgressHandler;
@@ -37,11 +39,14 @@ import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.shared.filtering.MavenResourcesFiltering;
+import org.assertj.core.api.Assertions;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -61,7 +66,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class BuildMojoTest extends AbstractMojoTestCase {
 
@@ -112,6 +116,26 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
                          any(AnsiProgressHandler.class));
     assertFilesCopied();
+  }
+
+  public void testBuildWithDockerDirectoryAndResourceFiltering() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-docker-directory-with-filtering.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+
+    mojo.execute(docker);
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+        any(AnsiProgressHandler.class));
+    assertFilesCopied();
+
+    // verify the Dockerfile was filtered as expected
+    final List<String> dockerFileContents = Resources
+        .readLines(new File("target/docker/Dockerfile").toURI().toURL(), Charset.defaultCharset());
+
+    Assertions.assertThat(dockerFileContents).contains("ENV FOO bar");
   }
 
   public void testBuildWithPush() throws Exception {
@@ -304,6 +328,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     }
     mojo.session = session;
     mojo.execution = execution;
+    mojo.mavenResourcesFiltering = lookup(MavenResourcesFiltering.class);
     return mojo;
   }
 
