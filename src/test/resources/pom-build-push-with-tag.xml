@@ -20,7 +20,7 @@
                     <!-- we have to supply values for all params because unit testing framework -->
                     <!-- doesn't set default values even though the are set in mojo-->
                     <dockerHost>http://host:2375</dockerHost>
-                    <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
+                    <dockerDirectory>dockerDirectory</dockerDirectory>
                     <imageName>busybox:sometag</imageName>
                     <!-- test image is pushed -->
                     <pushImage>true</pushImage>

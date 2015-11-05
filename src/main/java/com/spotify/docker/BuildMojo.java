@@ -106,8 +106,8 @@ public class BuildMojo extends AbstractDockerMojo {
   private String dockerDirectory;
 
   /**
-   * Enables <a href="http://maven.apache.org/plugins/maven-resources-plugin/examples/filter.html">resource
-   * filtering</a> when copying the {@link #dockerDirectory}. Defaults to false.
+   * Enables <a href="http://maven.apache.org/plugins/maven-resources-plugin/examples/filter.html">
+   *   resource filtering</a> when copying the {@link #dockerDirectory}. Defaults to false.
    * <p>
    * Note that this can also be set independently on each {@link Resource} in {@link #resources};
    * setting it at this level is useful if you need to filter the Dockerfile as well.</p>
@@ -227,7 +227,7 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(defaultValue = "${project}")
   private MavenProject mavenProject;
 
-  @Component(role=MavenResourcesFiltering.class)
+  @Component(role = MavenResourcesFiltering.class)
   protected MavenResourcesFiltering mavenResourcesFiltering;
 
   private PluginParameterExpressionEvaluator expressionEvaluator;
@@ -630,7 +630,7 @@ public class BuildMojo extends AbstractDockerMojo {
   private List<Resource> resourcesForFiltering() {
     return Lists.transform(this.resources, new Function<Resource, Resource>() {
       @Override
-      public Resource apply( final Resource resource) {
+      public Resource apply(final Resource resource) {
         if (resource.getTargetPath().startsWith("/")) {
           // remove the leading "/" as MavenResourcesFiltering will interpret it as an absolute
           // directory on the host
@@ -651,7 +651,8 @@ public class BuildMojo extends AbstractDockerMojo {
     final List<String> nonFilteredFileExtensions = emptyList();
     final List<String> fileFilters = null;
 
-    MavenResourcesExecution mavenResourcesExecution = new MavenResourcesExecution(resourcesForFiltering(),
+    MavenResourcesExecution mavenResourcesExecution = new MavenResourcesExecution(
+        resourcesForFiltering(),
         new File(destination),
         mavenProject,
         null,
@@ -661,11 +662,9 @@ public class BuildMojo extends AbstractDockerMojo {
     // to preserve backwards compatibility with old file copying methods, set resources base
     // directory to the project basedir otherwise paths like `src/main/resources` would be appended
     // to `${project.basedir}/src/main/resources`.
-    // TODO (mbrown): fix
-    final File basedir = new File(mavenProject.getBasedir(), "../../..");
-    mavenResourcesExecution.setResourcesBaseDirectory(basedir);
+    mavenResourcesExecution.setResourcesBaseDirectory(mavenProject.getBasedir());
 
-    mavenResourcesFiltering.filterResources( mavenResourcesExecution );
+    mavenResourcesFiltering.filterResources(mavenResourcesExecution);
 
     // NOTE: we no longer do any actual file copying below; this is done in the filterResources
     // method above.

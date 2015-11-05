@@ -37,13 +37,13 @@
             <resource>
               <!-- test we handle all elements correctly -->
               <targetPath>resources</targetPath>
-              <directory>src/test/resources/copy1</directory>
+              <directory>copy1</directory>
               <include>**/*.xml</include>
               <exclude>**/*exclude*</exclude>
             </resource>
             <resource>
               <!-- test we handle missing elements correctly -->
-              <directory>src/test/resources/copy2</directory>
+              <directory>copy2</directory>
             </resource>
           </resources>
           <runs>
