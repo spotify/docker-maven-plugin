@@ -191,9 +191,11 @@ mvn release:perform
 
 ## Known Issues
 
-Because the plugin uses Maven properties named like `docker.build.defaultProfile`, 
-if you declare any other Maven property with the name `docker` you will get a 
-rather strange-looking error from Maven:
+### Exception caught: system properties: docker has type STRING rather than OBJECT
+
+Because the plugin uses Maven properties named like
+`docker.build.defaultProfile`, if you declare any other Maven property with the
+name `docker` you will get a rather strange-looking error from Maven:
 
 ```
 [ERROR] Failed to execute goal com.spotify:docker-maven-plugin:0.0.21:build (default) on project <....>: 
@@ -201,3 +203,27 @@ Exception caught: system properties: docker has type STRING rather than OBJECT
 ```
 
 To fix this, rename the `docker` property in your pom.xml.
+
+### InternalServerErrorException: HTTP 500 Internal Server Error
+
+Problem: when building the Docker image, Maven outputs an exception with a
+stacktrace like:
+
+> Caused by: com.spotify.docker.client.shaded.javax.ws.rs.InternalServerErrorException: HTTP 500 Internal Server Error
+
+docker-maven-plugin communicates with your local Docker daemon using the HTTP
+Remote API and any unexpected errors that the daemon encounters will be
+reported as `500 Internal Server Error`.
+
+Check the Docker daemon log (typically at `/var/log/docker.log` or
+`/var/log/upstart/docker.log`) for more details.
+
+#### Invalid repository name ... only [a-z0-9-\_.] are allowed
+
+One common cause of `500 Internal Server Error` is attempting to build an image
+with a repository name containing uppercase characters, such as if the
+`<imageName>` in the plugin's configuration refers to `${project.version}` when
+the Maven project version is ending in `SNAPSHOT`.
+
+Consider putting the project version in an image tag (instead of repository
+name) with the `<dockerImageTags>` configuration option instead.
