@@ -10,6 +10,7 @@ A Maven plugin for building and pushing Docker images.
 * [Usage](#usage)
   * [Authenticating with private registries](#authenticating-with-private-registries)
 * [Releasing](#releasing)
+* [Known Issues](#known-issues)
 
 
 ## Why?
@@ -188,3 +189,15 @@ mvn release:prepare
 mvn release:perform
 ```
 
+## Known Issues
+
+Because the plugin uses Maven properties named like `docker.build.defaultProfile`, 
+if you declare any other Maven property with the name `docker` you will get a 
+rather strange-looking error from Maven:
+
+```
+[ERROR] Failed to execute goal com.spotify:docker-maven-plugin:0.0.21:build (default) on project <....>: 
+Exception caught: system properties: docker has type STRING rather than OBJECT
+```
+
+To fix this, rename the `docker` property in your pom.xml.
