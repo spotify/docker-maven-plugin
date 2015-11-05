@@ -597,8 +597,6 @@ public class BuildMojo extends AbstractDockerMojo {
         // no ENTRYPOINT set so use cmd verbatim
         commands.add("CMD " + cmd);
       }
-    } else {
-      commands.add("CMD []");
     }
 
     // this will overwrite an existing file
