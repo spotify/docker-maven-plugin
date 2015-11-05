@@ -61,7 +61,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class BuildMojoTest extends AbstractMojoTestCase {
 
@@ -70,9 +69,9 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "MAINTAINER user",
       "ENV FOO BAR",
       "WORKDIR /opt/app",
-      "ADD resources/parent/child/child.xml resources/parent/child/child.xml",
-      "ADD resources/parent/parent.xml resources/parent/parent.xml",
-      "ADD copy2.json copy2.json",
+      "ADD resources/parent/child/child.xml resources/parent/child/",
+      "ADD resources/parent/parent.xml resources/parent/",
+      "ADD copy2.json .",
       "RUN ln -s /a /b",
       "RUN wget 127.0.0.1:8080",
       "EXPOSE 8080 8081",
@@ -88,7 +87,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "ENV FOO BAR",
       "ENV FOOZ BARZ",
       "ENV PROPERTY_HELLO HELLO_VALUE",
-      "ADD /xml/pom-build-with-profile.xml /xml/pom-build-with-profile.xml",
+      "ADD /xml/pom-build-with-profile.xml /xml/",
       "EXPOSE 8080 8081 8082",
       "ENTRYPOINT date",
       "CMD [\"-u\"]"

@@ -294,7 +294,7 @@ public class BuildMojo extends AbstractDockerMojo {
     }
     mavenProject.getProperties().put("imageName", imageName);
 
-    final String destination = Paths.get(buildDirectory, "docker").toString();
+    final String destination = getDestination();
     if (dockerDirectory == null) {
       final List<String> copiedPaths = copyResources(destination);
       createDockerFile(destination, copiedPaths);
@@ -321,6 +321,10 @@ public class BuildMojo extends AbstractDockerMojo {
 
     // Write image info file
     writeImageInfoFile(buildInfo, tagInfoFile);
+  }
+
+  private String getDestination() {
+    return Paths.get(buildDirectory, "docker").toString();
   }
 
   private File createImageArtifact(final Artifact mainArtifact,
@@ -550,7 +554,7 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     for (String file : filesToAdd) {
-      commands.add(String.format("ADD %s %s", file, file));
+      commands.add(String.format("ADD %s %s", file, normalizeDest(file)));
     }
 
     if (runList != null && !runList.isEmpty()) {
@@ -601,9 +605,42 @@ public class BuildMojo extends AbstractDockerMojo {
       commands.add("CMD []");
     }
 
+    getLog().debug("Writing Dockerfile:" + System.lineSeparator() +
+                   Joiner.on(System.lineSeparator()).join(commands));
+
     // this will overwrite an existing file
     Files.createDirectories(Paths.get(directory));
     Files.write(Paths.get(directory, "Dockerfile"), commands, UTF_8);
+  }
+
+  private String normalizeDest(final String filePath) {
+    // if the path is a file (i.e. not a directory), remove the last part of the path so that we
+    // end up with:
+    //   ADD foo/bar.txt foo/
+    // instead of
+    //   ADD foo/bar.txt foo/bar.txt
+    // This is to prevent issues when adding tar.gz or other archives where Docker will
+    // automatically expand the archive into the "dest", so
+    //  ADD foo/x.tar.gz foo/x.tar.gz
+    // results in x.tar.gz being expanded *under* the path foo/x.tar.gz/stuff...
+    final File file = new File(filePath);
+
+    final String dest;
+    // need to know the path relative to destination to test if it is a file or directory,
+    // but only remove the last part of the path if there is a parent (i.e. don't remove a
+    // parent path segment from "file.txt")
+    if (new File(getDestination(), filePath).isFile()) {
+      if (file.getParent() != null) {
+        // remove file part of path
+        dest = file.getParent() + "/";
+      } else {
+        // working with a simple "ADD file.txt"
+        dest = ".";
+      }
+    } else {
+      dest = file.getPath();
+    }
+    return dest;
   }
 
   private List<String> copyResources(String destination) throws IOException {
