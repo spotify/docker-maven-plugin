@@ -231,13 +231,35 @@ public class BuildMojo extends AbstractDockerMojo {
   public boolean getForceTags() {
     return forceTags;
   }
+  
+  private boolean weShouldSkipDockerBuild() {
+    if (skipDockerBuild) {
+      return true;
+    }
+
+    String packaging = session.getCurrentProject().getPackaging();
+    if ("pom".equalsIgnoreCase(packaging)) {
+      getLog().debug("Project packaging is " + packaging);
+      return true;
+    }
+
+    if (dockerDirectory != null) {
+      Path path = Paths.get(dockerDirectory, "Dockerfile");
+        if (!path.toFile().exists()) {
+          getLog().debug("No Dockerfile in dockerDirectory");
+          return true;
+        }
+    }
+
+    return false;
+  }
 
   @Override
   protected void execute(final DockerClient docker)
       throws MojoExecutionException, GitAPIException, IOException, DockerException,
              InterruptedException {
 
-    if (skipDockerBuild) {
+    if (weShouldSkipDockerBuild()) {
       getLog().info("Skipping docker build");
       return;
     }
