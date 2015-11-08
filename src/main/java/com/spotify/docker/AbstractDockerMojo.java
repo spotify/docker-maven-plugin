@@ -40,6 +40,8 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
+import java.io.IOException;
+
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.spotify.docker.client.DefaultDockerClient.NO_TIMEOUT;
 
@@ -172,6 +174,8 @@ abstract class AbstractDockerMojo extends AbstractMojo {
    * @throws SecDispatcherException
    */
   protected AuthConfig authConfig() throws MojoExecutionException, SecDispatcherException {
+    // first try to construct the authentication config from the user's settings based on the
+    // <server> configured in this mojo
     if (settings != null) {
       final Server server = settings.getServer(serverId);
       if (server != null) {
@@ -207,6 +211,14 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
         return authConfigBuilder.build();
       }
+    }
+
+    // fall back to using the .docker configuration file
+    try {
+      return AuthConfig.fromDockerConfig().build();
+    } catch (IOException e) {
+      getLog()
+          .warn("IOException while reading authentication configuration from .docker directory", e);
     }
     return null;
   }
