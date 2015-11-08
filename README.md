@@ -125,7 +125,64 @@ To remove the image named `foobar` run the following command:
 For a complete list of configuration options run:
 `mvn com.spotify:docker-maven-plugin:<version>:help -Ddetail=true`
 
-### Authenticating with Private Registries
+### Using with Private Registries
+
+To push an image to a private registry, Docker requires that the image tag
+being pushed is prefixed with the hostname and port of the registry. For
+example to push `my-image` to `registry.example.com`, the image needs to be
+tagged as `registry.example.com/my-image`.
+
+The simplest way to do this with docker-maven-plugin is to put the registry
+name in the `<imageName>` field, for example
+
+```xml
+<plugin>
+  <groupId>com.spotify</groupId>
+  <artifactId>docker-maven-plugin</artifactId>
+  <configuration>
+    <imageName>registry.example.com/my-image</imageName>
+    ...
+```
+
+Then when pushing the image with either `docker:build -DpushImage` or
+`docker:push`, the docker daemon will push to `registry.example.com`.
+
+Alternatively, if you wish to use a short name in `docker:build` you can use
+`docker:tag` to tag the just-built image with the full registry hostname. For
+example:
+
+```xml
+<plugin>
+  <groupId>com.spotify</groupId>
+  <artifactId>docker-maven-plugin</artifactId>
+  <configuration>
+    <imageName>my-image</imageName>
+    ...
+  </configuration>
+  <executions>
+    <execution>
+      <id>build-image</id>
+      <phase>package</phase>
+      <goals>
+        <goal>build</goal>
+      </goals>
+    </execution>
+    <execution>
+      <id>tag-image</id>
+      <phase>package</phase>
+      <goals>
+        <goal>tag</goal>
+      </goals>
+      <configuration>
+        <image>my-image</image>
+        <newName>registry.example.com/my-image</newName>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+```
+
+#### Authenticating with Private Registries
 
 To push to a private Docker image registry that requires authentication, you can put your
 credentials in your Maven's global `settings.xml` file as part of the `<servers></servers>` block.
