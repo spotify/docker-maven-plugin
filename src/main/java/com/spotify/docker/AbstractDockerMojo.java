@@ -21,6 +21,8 @@
 
 package com.spotify.docker;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificateException;
 import com.spotify.docker.client.DockerClient;
@@ -74,38 +76,40 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   @Parameter(property = "registryUrl")
   private String registryUrl;
 
+  protected abstract void execute(final DockerClient dockerClient) throws Exception;
+
+  @Override
   public void execute() throws MojoExecutionException {
-    DockerClient client = null;
-    try {
-      final DefaultDockerClient.Builder builder = getBuilder();
-
-      final String dockerHost = rawDockerHost();
-      if (!isNullOrEmpty(dockerHost)) {
-        builder.uri(dockerHost);
-      }
-
-      final AuthConfig authConfig = authConfig();
-      if (authConfig != null) {
-        builder.authConfig(authConfig);
-      }
-
-      client = builder.build();
+    try (DockerClient client = getDockerClient()) {
       execute(client);
     } catch (Exception e) {
       throw new MojoExecutionException("Exception caught", e);
-    } finally {
-      if (client != null) {
-        client.close();
-      }
     }
   }
 
-  protected DefaultDockerClient.Builder getBuilder() throws DockerCertificateException {
-    return DefaultDockerClient.fromEnv()
-      .readTimeoutMillis(NO_TIMEOUT);
+  private DockerClient getDockerClient()
+      throws DockerCertificateException, MojoExecutionException, SecDispatcherException {
+
+    final DefaultDockerClient.Builder builder = getBuilder();
+
+    final String dockerHost = rawDockerHost();
+    if (!isNullOrEmpty(dockerHost)) {
+      builder.uri(dockerHost);
+    }
+
+    final AuthConfig authConfig = authConfig();
+    if (authConfig != null) {
+      builder.authConfig(authConfig);
+    }
+
+    return builder.build();
   }
 
-  protected abstract void execute(final DockerClient dockerClient) throws Exception;
+  @VisibleForTesting
+  protected DefaultDockerClient.Builder getBuilder() throws DockerCertificateException {
+    return DefaultDockerClient.fromEnv()
+        .readTimeoutMillis(NO_TIMEOUT);
+  }
 
   protected String rawDockerHost() {
     return dockerHost;
