@@ -216,6 +216,8 @@ abstract class AbstractDockerMojo extends AbstractMojo {
    * @return AuthConfig
    */
   protected AuthConfig authConfig() throws MojoExecutionException, SecDispatcherException {
+    // first try to construct the authentication config from the user's settings based on the
+    // <server> configured in this mojo
     if (settings != null) {
       final Server server = settings.getServer(serverId);
       if (server != null) {
@@ -268,6 +270,14 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
         return authConfigBuilder.build();
       }
+    }
+
+    // fall back to using the .docker configuration file
+    try {
+      return AuthConfig.fromDockerConfig().build();
+    } catch (IOException e) {
+      getLog()
+          .warn("IOException while reading authentication configuration from .docker directory", e);
     }
     return null;
   }
