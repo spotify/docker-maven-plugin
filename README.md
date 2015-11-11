@@ -104,25 +104,12 @@ In order for this to succeed, at least one imageTag must be present in the confi
       <plugins>
         ...
         <plugin>
-          <groupId>com.spotify</groupId>
-          <artifactId>docker-maven-plugin</artifactId>
-          <version>VERSION GOES HERE</version>
           <configuration>
-            <imageName>example</imageName>
-            <baseImage>java</baseImage>
+            ...
             <imageTags>
                <imageTag>${project.version}</imageTag>
                <imageTag>latest</imageTag>
             </imageTags>
-            <entryPoint>["java", "-jar", "/${project.build.finalName}.jar"]</entryPoint>
-            <!-- copy the service's jar file from target into the root directory of the image -->
-            <resources>
-               <resource>
-                 <targetPath>/</targetPath>
-                 <directory>${project.build.directory}</directory>
-                 <include>${project.build.finalName}.jar</include>
-               </resource>
-            </resources>
           </configuration>
         </plugin>
         ...
