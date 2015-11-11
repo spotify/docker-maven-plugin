@@ -106,10 +106,15 @@ public class BuildMojo extends AbstractDockerMojo {
   private boolean skipDockerBuild;
 
   /**
-   * Flag to attempt to pull base images even if older images exists locally.
+   * Flag to attempt to pull base images even if older images exists locally. Sends the equivalent
+   * of `--pull=true` to Docker daemon when building the image.
    */
   @Parameter(property = "pullOnBuild", defaultValue = "false")
   private boolean pullOnBuild;
+
+  /** Set to true to pass the `--no-cache` flag to the Docker daemon when building an image. */
+  @Parameter(property = "noCache", defaultValue = "false")
+  private boolean noCache;
 
   /** Flag to push image after it is built. Defaults to false. */
   @Parameter(property = "pushImage", defaultValue = "false")
@@ -682,6 +687,9 @@ public class BuildMojo extends AbstractDockerMojo {
     final List<DockerClient.BuildParameter> buildParams = Lists.newArrayList();
     if (pullOnBuild) {
       buildParams.add(DockerClient.BuildParameter.PULL_NEWER_IMAGE);
+    }
+    if (noCache) {
+      buildParams.add(DockerClient.BuildParameter.NO_CACHE);
     }
     return buildParams.toArray(new DockerClient.BuildParameter[buildParams.size()]);
   }
