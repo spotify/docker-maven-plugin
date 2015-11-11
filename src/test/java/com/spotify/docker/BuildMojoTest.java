@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerClient.BuildParameter;
 import com.spotify.docker.client.ProgressHandler;
 import com.spotify.docker.client.messages.ProgressMessage;
 
@@ -61,7 +62,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class BuildMojoTest extends AbstractMojoTestCase {
 
@@ -286,6 +286,30 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     new File(filePath).deleteOnExit();
   }
 
+  public void testPullOnBuild() throws Exception {
+    final BuildMojo mojo = setupMojo(getTestFile("src/test/resources/pom-build-pull-on-build.xml"));
+    final DockerClient docker = mock(DockerClient.class);
+
+    mojo.execute(docker);
+
+    verify(docker).build(any(Path.class),
+        anyString(),
+        any(ProgressHandler.class),
+        eq(BuildParameter.PULL_NEWER_IMAGE));
+  }
+
+  public void testNoCache() throws Exception {
+    final BuildMojo mojo = setupMojo(getTestFile("src/test/resources/pom-build-no-cache.xml"));
+    final DockerClient docker = mock(DockerClient.class);
+
+    mojo.execute(docker);
+
+    verify(docker).build(any(Path.class),
+        anyString(),
+        any(ProgressHandler.class),
+        eq(BuildParameter.NO_CACHE));
+  }
+  
   private BuildMojo setupMojo(final File pom) throws Exception {
     final MavenExecutionRequest executionRequest = new DefaultMavenExecutionRequest();
     final ProjectBuildingRequest buildingRequest = executionRequest.getProjectBuildingRequest();
