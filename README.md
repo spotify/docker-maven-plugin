@@ -116,6 +116,10 @@ In order for this to succeed, at least one imageTag must be present in the confi
       </plugins>
     </build>
 
+Tags-to-be-pushed can also be specified directly on the command line with
+
+    mvn ... docker:build -DpushImageTags -DdockerImageTag=latest -DdockerImageTag=another-tag
+
 By default the plugin will try to connect to docker on localhost:2375. Set the DOCKER_HOST 
 environment variable to connect elsewhere. 
 
