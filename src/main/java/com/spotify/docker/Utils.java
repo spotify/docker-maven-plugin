@@ -24,12 +24,17 @@ package com.spotify.docker;
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.ProgressHandler;
+import com.spotify.docker.client.messages.ProgressMessage;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
 import java.io.IOException;
 import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -60,10 +65,21 @@ public class Utils {
     return new String[] { repo, tag };
   }
 
-  public static void pushImage(DockerClient docker, String imageName, Log log)
+  public static void pushImage(DockerClient docker, String imageName, Log log,
+                               final DockerBuildInformation buildInfo)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
       log.info("Pushing " + imageName);
-      docker.push(imageName, new AnsiProgressHandler());
+
+    final AnsiProgressHandler ansiProgressHandler = new AnsiProgressHandler();
+    final DigestExtractingProgressHandler handler = new DigestExtractingProgressHandler(
+        ansiProgressHandler);
+
+    docker.push(imageName, handler);
+
+    if (buildInfo != null) {
+      final String imageNameWithoutTag = parseImageName(imageName)[0];
+      buildInfo.setDigest(imageNameWithoutTag + "@" + handler.digest());
+    }
   }
 
   // push just the tags listed in the pom rather than all images using imageName
@@ -81,5 +97,37 @@ public class Utils {
        log.info("Pushing " + imageName + ":" + imageTag);
        docker.push(imageNameWithTag, new AnsiProgressHandler());
       }
+  }
+  
+  public static void writeImageInfoFile(final DockerBuildInformation buildInfo,
+                                        final String tagInfoFile) throws IOException {
+    final Path imageInfoPath = Paths.get(tagInfoFile);
+    if (imageInfoPath.getParent() != null) {
+      Files.createDirectories(imageInfoPath.getParent());
+    }
+    Files.write(imageInfoPath, buildInfo.toJsonBytes());
+  }
+
+  private static class DigestExtractingProgressHandler implements ProgressHandler {
+
+    private final ProgressHandler delegate;
+    private String digest;
+
+    DigestExtractingProgressHandler(final ProgressHandler delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public void progress(final ProgressMessage message) throws DockerException {
+      if (message.digest() != null) {
+        digest = message.digest();
+      }
+
+      delegate.progress(message);
+    }
+
+    public String digest() {
+      return digest;
+    }
   }
 }

@@ -70,6 +70,7 @@ import static com.google.common.collect.Ordering.natural;
 import static com.spotify.docker.Utils.parseImageName;
 import static com.spotify.docker.Utils.pushImage;
 import static com.spotify.docker.Utils.pushImageTag;
+import static com.spotify.docker.Utils.writeImageInfoFile;
 import static com.typesafe.config.ConfigRenderOptions.concise;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
@@ -318,13 +319,6 @@ public class BuildMojo extends AbstractDockerMojo {
 
     final DockerBuildInformation buildInfo = new DockerBuildInformation(imageName, getLog());
 
-    // Write image info file
-    final Path imageInfoPath = Paths.get(tagInfoFile);
-    if (imageInfoPath.getParent() != null) {
-      Files.createDirectories(imageInfoPath.getParent());
-    }
-    Files.write(imageInfoPath, buildInfo.toJsonBytes());
-
     if ("docker".equals(mavenProject.getPackaging())) {
       final File imageArtifact = createImageArtifact(mavenProject.getArtifact(), buildInfo);
       mavenProject.getArtifact().setFile(imageArtifact);
@@ -336,8 +330,11 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     if (pushImage) {
-      pushImage(docker, imageName, getLog());
+      pushImage(docker, imageName, getLog(), buildInfo);
     }
+
+    // Write image info file
+    writeImageInfoFile(buildInfo, tagInfoFile);
   }
 
   private File createImageArtifact(final Artifact mainArtifact,
@@ -614,8 +611,6 @@ public class BuildMojo extends AbstractDockerMojo {
         // no ENTRYPOINT set so use cmd verbatim
         commands.add("CMD " + cmd);
       }
-    } else {
-      commands.add("CMD []");
     }
 
     // this will overwrite an existing file

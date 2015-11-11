@@ -4,7 +4,7 @@
 
   <groupId>com.spotify</groupId>
   <artifactId>docker-maven-plugin</artifactId>
-  <version>0.3.3-SNAPSHOT</version>
+  <version>0.3.6-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
   <name>docker-maven-plugin</name>
   <description>A maven plugin for docker</description>
@@ -125,7 +125,7 @@
     <dependency>
       <groupId>com.spotify</groupId>
       <artifactId>docker-client</artifactId>
-      <version>3.1.2</version>
+      <version>3.2.1</version>
       <classifier>shaded</classifier>
     </dependency>
     <dependency>

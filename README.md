@@ -10,6 +10,7 @@ A Maven plugin for building and pushing Docker images.
 * [Usage](#usage)
   * [Authenticating with private registries](#authenticating-with-private-registries)
 * [Releasing](#releasing)
+* [Known Issues](#known-issues)
 
 
 ## Why?
@@ -19,10 +20,10 @@ example, the build process for a Java service can output a Docker image that run
 
 ## Setup
 
-You can specify the base image, entry point, cmd, maintainer and files you want to add to your 
-image directly in the pom, without needing a separate `Dockerfile`. If you need other commands such 
-as `RUN` or `VOLUME`, then you will need to create a `Dockerfile` and use the `dockerDirectory`
-element.
+You can specify the base image, entry point, cmd, maintainer and files you want to add to your
+image directly in the pom, without needing a separate `Dockerfile`.
+If you need `VOLUME` command(or any other not supported dockerfile command), then you will need
+to create a `Dockerfile` and use the `dockerDirectory` element.
 
 ### Specify build info in the POM
 
@@ -150,7 +151,64 @@ To remove the image named `foobar` run the following command:
 For a complete list of configuration options run:
 `mvn com.spotify:docker-maven-plugin:<version>:help -Ddetail=true`
 
-### Authenticating with Private Registries
+### Using with Private Registries
+
+To push an image to a private registry, Docker requires that the image tag
+being pushed is prefixed with the hostname and port of the registry. For
+example to push `my-image` to `registry.example.com`, the image needs to be
+tagged as `registry.example.com/my-image`.
+
+The simplest way to do this with docker-maven-plugin is to put the registry
+name in the `<imageName>` field, for example
+
+```xml
+<plugin>
+  <groupId>com.spotify</groupId>
+  <artifactId>docker-maven-plugin</artifactId>
+  <configuration>
+    <imageName>registry.example.com/my-image</imageName>
+    ...
+```
+
+Then when pushing the image with either `docker:build -DpushImage` or
+`docker:push`, the docker daemon will push to `registry.example.com`.
+
+Alternatively, if you wish to use a short name in `docker:build` you can use
+`docker:tag` to tag the just-built image with the full registry hostname. For
+example:
+
+```xml
+<plugin>
+  <groupId>com.spotify</groupId>
+  <artifactId>docker-maven-plugin</artifactId>
+  <configuration>
+    <imageName>my-image</imageName>
+    ...
+  </configuration>
+  <executions>
+    <execution>
+      <id>build-image</id>
+      <phase>package</phase>
+      <goals>
+        <goal>build</goal>
+      </goals>
+    </execution>
+    <execution>
+      <id>tag-image</id>
+      <phase>package</phase>
+      <goals>
+        <goal>tag</goal>
+      </goals>
+      <configuration>
+        <image>my-image</image>
+        <newName>registry.example.com/my-image</newName>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+```
+
+#### Authenticating with Private Registries
 
 To push to a private Docker image registry that requires authentication, you can put your
 credentials in your Maven's global `settings.xml` file as part of the `<servers></servers>` block.
@@ -214,3 +272,41 @@ mvn release:prepare
 mvn release:perform
 ```
 
+## Known Issues
+
+### Exception caught: system properties: docker has type STRING rather than OBJECT
+
+Because the plugin uses Maven properties named like
+`docker.build.defaultProfile`, if you declare any other Maven property with the
+name `docker` you will get a rather strange-looking error from Maven:
+
+```
+[ERROR] Failed to execute goal com.spotify:docker-maven-plugin:0.0.21:build (default) on project <....>: 
+Exception caught: system properties: docker has type STRING rather than OBJECT
+```
+
+To fix this, rename the `docker` property in your pom.xml.
+
+### InternalServerErrorException: HTTP 500 Internal Server Error
+
+Problem: when building the Docker image, Maven outputs an exception with a
+stacktrace like:
+
+> Caused by: com.spotify.docker.client.shaded.javax.ws.rs.InternalServerErrorException: HTTP 500 Internal Server Error
+
+docker-maven-plugin communicates with your local Docker daemon using the HTTP
+Remote API and any unexpected errors that the daemon encounters will be
+reported as `500 Internal Server Error`.
+
+Check the Docker daemon log (typically at `/var/log/docker.log` or
+`/var/log/upstart/docker.log`) for more details.
+
+#### Invalid repository name ... only [a-z0-9-\_.] are allowed
+
+One common cause of `500 Internal Server Error` is attempting to build an image
+with a repository name containing uppercase characters, such as if the
+`<imageName>` in the plugin's configuration refers to `${project.version}` when
+the Maven project version is ending in `SNAPSHOT`.
+
+Consider putting the project version in an image tag (instead of repository
+name) with the `<dockerImageTags>` configuration option instead.

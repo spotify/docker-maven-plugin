@@ -30,12 +30,12 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.spotify.docker.Utils.parseImageName;
 import static com.spotify.docker.Utils.pushImage;
+import static com.spotify.docker.Utils.writeImageInfoFile;
 
 /**
  * Applies a tag to a docker image. Optionally, <tt>useGitCommitId</tt> can be used to generate a
@@ -113,16 +113,13 @@ public class TagMojo extends AbstractDockerMojo {
     getLog().info(String.format("Creating tag %s from %s", normalizedName, image));
     docker.tag(image, normalizedName, forceTags);
 
-    final FileOutputStream jsonOutput = new FileOutputStream(tagInfoFile);
-    try {
-      jsonOutput.write(new DockerBuildInformation(normalizedName, getLog()).toJsonBytes());
-    } finally {
-      jsonOutput.close();
-    }
+    final DockerBuildInformation buildInfo = new DockerBuildInformation(normalizedName, getLog());
 
     if (pushImage) {
-      pushImage(docker, newName, getLog());
+      pushImage(docker, newName, getLog(), buildInfo);
     }
+
+    writeImageInfoFile(buildInfo, tagInfoFile);
   }
 
 }
