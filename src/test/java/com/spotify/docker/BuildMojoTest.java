@@ -21,6 +21,8 @@
 
 package com.spotify.docker;
 
+import com.google.common.collect.ImmutableList;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.docker.client.AnsiProgressHandler;
@@ -227,6 +229,29 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     assertFilesCopied();
     assertEquals("wrong dockerfile contents", GENERATED_DOCKERFILE,
                  Files.readAllLines(Paths.get("target/docker/Dockerfile"), UTF_8));
+  }
+
+  public void testBuildGeneratedDockerFile_CopiesEntireDirectory() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-copy-entire-directory.xml");
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+    mojo.execute(docker);
+
+    verify(docker).build(eq(Paths.get("target/docker")), eq("test-copied-directory"),
+        any(AnsiProgressHandler.class));
+
+    List<String> expectedDockerFileContents = ImmutableList.of(
+        "FROM busybox",
+        "ADD /data /data",
+        "ENTRYPOINT echo"
+    );
+
+    assertEquals("wrong dockerfile contents", expectedDockerFileContents,
+        Files.readAllLines(Paths.get("target/docker/Dockerfile"), UTF_8));
+
+    assertFileExists("target/docker/data/file.txt");
+    assertFileExists("target/docker/data/nested/file2");
   }
 
   public void testBuildWithProfile() throws Exception {
