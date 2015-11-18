@@ -321,7 +321,7 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     if (pushImage) {
-      pushImage(docker, imageName, getLog(), buildInfo);
+      pushImage(docker, imageName, getLog(), buildInfo, getRetryPushCount(), getRetryPushTimeout());
     }
 
     // Write image info file

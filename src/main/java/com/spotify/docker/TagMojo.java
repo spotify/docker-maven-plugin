@@ -116,7 +116,7 @@ public class TagMojo extends AbstractDockerMojo {
     final DockerBuildInformation buildInfo = new DockerBuildInformation(normalizedName, getLog());
 
     if (pushImage) {
-      pushImage(docker, newName, getLog(), buildInfo);
+      pushImage(docker, newName, getLog(), buildInfo, getRetryPushCount(), getRetryPushTimeout());
     }
 
     writeImageInfoFile(buildInfo, tagInfoFile);
