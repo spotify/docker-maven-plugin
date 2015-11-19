@@ -74,6 +74,26 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   @Parameter(property = "registryUrl")
   private String registryUrl;
 
+  /**
+   * Number of retries for failing pushes, defaults to 5.
+   */
+  @Parameter(property = "retryPushCount", defaultValue = "5")
+  private int retryPushCount;
+
+  /**
+   * Retry timeout for failing pushes, defaults to 10 seconds.
+   */
+  @Parameter(property = "retryPushTimeout", defaultValue = "10000")
+  private int retryPushTimeout;
+
+  public int getRetryPushTimeout() {
+    return retryPushTimeout;
+  }
+
+  public int getRetryPushCount() {
+    return retryPushCount;
+  };
+
   public void execute() throws MojoExecutionException {
     DockerClient client = null;
     try {
