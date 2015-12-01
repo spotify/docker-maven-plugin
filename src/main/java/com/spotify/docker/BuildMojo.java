@@ -46,6 +46,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
 import org.codehaus.plexus.util.DirectoryScanner;
+import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.File;
@@ -678,6 +679,11 @@ public class BuildMojo extends AbstractDockerMojo {
       final String targetPath = resource.getTargetPath() == null ? "" : resource.getTargetPath();
 
       if (copyWholeDir) {
+        final Path destPath = Paths.get(destination, targetPath);
+        getLog().info(String.format("Copying dir %s -> %s", source, destPath));
+
+        Files.createDirectories(destPath);
+        FileUtils.copyDirectoryStructure(source, destPath.toFile());
         copiedPaths.add(separatorsToUnix(targetPath));
       } else {
         for (String included : includedFiles) {
