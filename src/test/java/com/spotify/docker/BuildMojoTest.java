@@ -82,6 +82,24 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "ENTRYPOINT date",
       "CMD [\"-u\"]"
   );
+    private static final List<String> GENERATED_DOCKERFILEVOLUME = Arrays.asList(
+            "FROM busybox",
+            "MAINTAINER user",
+            "ENV FOO BAR",
+            "WORKDIR /opt/app",
+            "ADD resources/parent/child/child.xml resources/parent/child/",
+            "ADD resources/parent/parent.xml resources/parent/",
+            "ADD copy2.json .",
+            "RUN ln -s /a /b",
+            "RUN wget 127.0.0.1:8080",
+            "EXPOSE 8080 8081",
+            "USER app",
+            "ENTRYPOINT date",
+            "CMD [\"-u\"]",
+            "VOLUME /example0",
+            "VOLUME /example1",
+            "VOLUME /example2"
+    );
 
   private static final List<String> PROFILE_GENERATED_DOCKERFILE = Arrays.asList(
       "FROM busybox",
@@ -100,6 +118,23 @@ public class BuildMojoTest extends AbstractMojoTestCase {
   protected void setUp() throws Exception {
     super.setUp();
     deleteDirectory("target/docker");
+  }
+  //tests the docker volumes feature
+  public void testBuildWithDockerVolumes() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-docker-volumes.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+
+    mojo.execute(docker);
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+            any(AnsiProgressHandler.class));
+    assertFilesCopied();
+
+    assertEquals("wrong dockerfile contents", GENERATED_DOCKERFILEVOLUME,
+            Files.readAllLines(Paths.get("target/docker/Dockerfile"), UTF_8));
   }
 
   public void testBuildWithDockerDirectory() throws Exception {
