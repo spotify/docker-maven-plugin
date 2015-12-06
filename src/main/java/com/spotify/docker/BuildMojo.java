@@ -636,14 +636,15 @@ public class BuildMojo extends AbstractDockerMojo {
     if (new File(getDestination(), filePath).isFile()) {
       if (file.getParent() != null) {
         // remove file part of path
-        dest = file.getParent() + "/";
+        dest = separatorsToUnix(file.getParent()) + "/";
       } else {
         // working with a simple "ADD file.txt"
         dest = ".";
       }
     } else {
-      dest = file.getPath();
+      dest = separatorsToUnix(file.getPath());
     }
+
     return dest;
   }
 
@@ -687,15 +688,15 @@ public class BuildMojo extends AbstractDockerMojo {
         copiedPaths.add(separatorsToUnix(targetPath));
       } else {
         for (String included : includedFiles) {
-          final Path sourcePath = Paths.get(resource.getDirectory(), included);
-          final Path destPath = Paths.get(destination, targetPath, included);
+          final Path sourcePath = Paths.get(resource.getDirectory()).resolve(included);
+          final Path destPath = Paths.get(destination, targetPath).resolve(included);
           getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));
           // ensure all directories exist because copy operation will fail if they don't
           Files.createDirectories(destPath.getParent());
           Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING,
                      StandardCopyOption.COPY_ATTRIBUTES);
 
-          copiedPaths.add(separatorsToUnix(Paths.get(targetPath, included).toString()));
+          copiedPaths.add(separatorsToUnix(Paths.get(targetPath).resolve(included).toString()));
         }
       }
 
