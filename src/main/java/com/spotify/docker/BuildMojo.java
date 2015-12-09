@@ -234,21 +234,22 @@ public class BuildMojo extends AbstractDockerMojo {
   
   private boolean weShouldSkipDockerBuild() {
     if (skipDockerBuild) {
+      getLog().info("Property skipDockerBuild is set");
       return true;
     }
 
     String packaging = session.getCurrentProject().getPackaging();
     if ("pom".equalsIgnoreCase(packaging)) {
-      getLog().debug("Project packaging is " + packaging);
+      getLog().info("Project packaging is " + packaging);
       return true;
     }
 
     if (dockerDirectory != null) {
       Path path = Paths.get(dockerDirectory, "Dockerfile");
-        if (!path.toFile().exists()) {
-          getLog().debug("No Dockerfile in dockerDirectory");
-          return true;
-        }
+      if (!path.toFile().exists()) {
+        getLog().info("No Dockerfile in dockerDirectory");
+        return true;
+      }
     }
 
     return false;
