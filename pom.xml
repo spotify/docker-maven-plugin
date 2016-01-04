@@ -142,12 +142,12 @@
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-core</artifactId>
-      <version>3.2.1</version>
+      <version>3.3.3</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-artifact</artifactId>
-      <version>3.2.1</version>
+      <version>3.3.3</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jgit</groupId>
@@ -157,7 +157,7 @@
     <dependency>
       <groupId>org.apache.maven.plugin-testing</groupId>
       <artifactId>maven-plugin-testing-harness</artifactId>
-      <version>3.1.0</version>
+      <version>3.3.0</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -174,7 +174,7 @@
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-compat</artifactId>
-      <version>3.1.1</version>
+      <version>3.3.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -209,16 +209,6 @@
     </dependency>
   </dependencies>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>14.0.1</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-
   <build>
     <testResources>
       <testResource>
@@ -240,7 +230,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>3.2</version>
+        <version>3.4</version>
         <configuration>
           <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
         </configuration>
