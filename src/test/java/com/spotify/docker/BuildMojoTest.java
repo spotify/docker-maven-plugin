@@ -34,9 +34,11 @@ import com.spotify.docker.client.messages.ProgressMessage;
 import org.apache.maven.execution.DefaultMavenExecutionRequest;
 import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Build;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
+import org.apache.maven.plugin.testing.stubs.MavenProjectStub;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
@@ -336,11 +338,12 @@ public class BuildMojoTest extends AbstractMojoTestCase {
   }
   
   private BuildMojo setupMojo(final File pom) throws Exception {
-    final MavenExecutionRequest executionRequest = new DefaultMavenExecutionRequest();
-    final ProjectBuildingRequest buildingRequest = executionRequest.getProjectBuildingRequest();
-    final ProjectBuilder projectBuilder = this.lookup(ProjectBuilder.class);
-    final MavenProject project = projectBuilder.build(pom, buildingRequest).getProject();
+    final MavenProject project = new ProjectStub(pom);
     final MavenSession session = newMavenSession(project);
+    // for some reason the superclass method newMavenSession() does not copy properties from the
+    // project model to the session. This is needed for the use of ExpressionEvaluator in BuildMojo.
+    session.getRequest().setUserProperties(project.getModel().getProperties());
+
     final MojoExecution execution = newMojoExecution("build");
     final BuildMojo mojo = (BuildMojo) this.lookupConfiguredMojo(session, execution);
     mojo.buildDirectory = "target";
