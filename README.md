@@ -148,8 +148,9 @@ Then when pushing the image with either `docker:build -DpushImage` or
 `docker:push`, the docker daemon will push to `registry.example.com`.
 
 Alternatively, if you wish to use a short name in `docker:build` you can use
-`docker:tag` to tag the just-built image with the full registry hostname. For
-example:
+`docker:tag -DpushImage` to tag the just-built image with the full registry hostname and push it. It's important to use the `pushImage` flag as using `docker:push` independently will attempt to push the original image. 
+
+For example:
 
 ```xml
 <plugin>
