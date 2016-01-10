@@ -157,6 +157,10 @@ public class BuildMojo extends AbstractDockerMojo {
 
   private List<String> runList;
 
+  /** Flag to squash all run commands into one layer. Defaults to false. */
+  @Parameter(property = "squashRunCommands", defaultValue = "false")
+  private boolean squashRunCommands;
+
   /** All resources will be copied to this directory before building the image. */
   @Parameter(property = "project.build.directory")
   protected String buildDirectory;
@@ -564,8 +568,12 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     if (runList != null && !runList.isEmpty()) {
-      for (final String run : runList) {
-        commands.add("RUN " + run);
+      if (squashRunCommands) {
+        commands.add("RUN " + Joiner.on(" &&\\\n\t").join(runList));
+      } else {
+        for (final String run : runList) {
+          commands.add("RUN " + run);
+        }
       }
     }
 
