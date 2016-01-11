@@ -137,6 +137,10 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(property = "dockerEntryPoint")
   private String entryPoint;
 
+  /** The volumes for the image */
+  @Parameter(property = "dockerVolumes")
+  private String[] volumes;
+
   /** The cmd command for the image. Ignored if dockerDirectory is set. */
   @Parameter(property = "dockerCmd")
   private String cmd;
@@ -606,6 +610,13 @@ public class BuildMojo extends AbstractDockerMojo {
       } else {
         // no ENTRYPOINT set so use cmd verbatim
         commands.add("CMD " + cmd);
+      }
+    }
+
+    //Add VOLUMES to dockerfile
+    if (volumes != null) {
+      for (String volume : volumes) {
+        commands.add("VOLUME " + volume);
       }
     }
 
