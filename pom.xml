@@ -4,7 +4,7 @@
 
   <groupId>com.spotify</groupId>
   <artifactId>docker-maven-plugin</artifactId>
-  <version>0.3.223</version>
+  <version>0.3.224-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
   <name>docker-maven-plugin</name>
   <description>A maven plugin for docker</description>
@@ -34,7 +34,7 @@
     <connection>scm:git:https://github.com/spotify/docker-maven-plugin</connection>
     <developerConnection>scm:git:git@github.com:spotify/docker-maven-plugin</developerConnection>
     <url>https://github.com/spotify/docker-maven-plugin</url>
-    <tag>v0.3.223</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <distributionManagement>
