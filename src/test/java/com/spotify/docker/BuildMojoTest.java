@@ -27,21 +27,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.DockerClient.BuildParameter;
+import com.spotify.docker.client.DockerClient.BuildParam;
 import com.spotify.docker.client.ProgressHandler;
 import com.spotify.docker.client.messages.ProgressMessage;
 
-import org.apache.maven.execution.DefaultMavenExecutionRequest;
-import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Build;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
-import org.apache.maven.plugin.testing.stubs.MavenProjectStub;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectBuilder;
-import org.apache.maven.project.ProjectBuildingRequest;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -265,7 +259,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     mojo.execute(docker);
 
     verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
-                         any(AnsiProgressHandler.class), any(DockerClient.BuildParameter.class));
+                         any(AnsiProgressHandler.class), any(BuildParam.class));
   }
 
   public void testBuildWithGeneratedDockerfile() throws Exception {
@@ -389,7 +383,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     verify(docker).build(any(Path.class),
         anyString(),
         any(ProgressHandler.class),
-        eq(BuildParameter.PULL_NEWER_IMAGE));
+        eq(BuildParam.pullNewerImage()));
   }
 
   public void testNoCache() throws Exception {
@@ -401,7 +395,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     verify(docker).build(any(Path.class),
         anyString(),
         any(ProgressHandler.class),
-        eq(BuildParameter.NO_CACHE));
+        eq(BuildParam.noCache()));
   }
   
   private BuildMojo setupMojo(final File pom) throws Exception {
