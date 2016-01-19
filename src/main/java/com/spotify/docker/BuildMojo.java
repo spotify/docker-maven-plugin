@@ -526,10 +526,10 @@ public class BuildMojo extends AbstractDockerMojo {
   }
 
   private void buildImage(final DockerClient docker, final String buildDir,
-                          final DockerClient.BuildParameter... buildParameters)
+                          final DockerClient.BuildParam... buildParams)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
     getLog().info("Building image " + imageName);
-    docker.build(Paths.get(buildDir), imageName, new AnsiProgressHandler(), buildParameters);
+    docker.build(Paths.get(buildDir), imageName, new AnsiProgressHandler(), buildParams);
     getLog().info("Built " + imageName);
   }
 
@@ -746,14 +746,14 @@ public class BuildMojo extends AbstractDockerMojo {
     return path.replace(WINDOWS_SEPARATOR, UNIX_SEPARATOR);
   }
 
-  private DockerClient.BuildParameter[] buildParams() {
-    final List<DockerClient.BuildParameter> buildParams = Lists.newArrayList();
+  private DockerClient.BuildParam[] buildParams() {
+    final List<DockerClient.BuildParam> buildParams = Lists.newArrayList();
     if (pullOnBuild) {
-      buildParams.add(DockerClient.BuildParameter.PULL_NEWER_IMAGE);
+      buildParams.add(DockerClient.BuildParam.pullNewerImage());
     }
     if (noCache) {
-      buildParams.add(DockerClient.BuildParameter.NO_CACHE);
+      buildParams.add(DockerClient.BuildParam.noCache());
     }
-    return buildParams.toArray(new DockerClient.BuildParameter[buildParams.size()]);
+    return buildParams.toArray(new DockerClient.BuildParam[buildParams.size()]);
   }
 }
