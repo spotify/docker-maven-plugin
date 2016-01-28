@@ -95,6 +95,32 @@ To push the image you just built to the registry, specify the `pushImage` flag.
 
     mvn clean package docker:build -DpushImage
 
+To push only specific tags of the image to the registry, specify the `pushImageTag` flag.
+
+    mvn clean package docker:build -DpushImageTag
+
+In order for this to succeed, at least one imageTag must be present in the config, multiple tags can be used.
+
+    <build>
+      <plugins>
+        ...
+        <plugin>
+          <configuration>
+            ...
+            <imageTags>
+               <imageTag>${project.version}</imageTag>
+               <imageTag>latest</imageTag>
+            </imageTags>
+          </configuration>
+        </plugin>
+        ...
+      </plugins>
+    </build>
+
+Tags-to-be-pushed can also be specified directly on the command line with
+
+    mvn ... docker:build -DpushImageTags -DdockerImageTag=latest -DdockerImageTag=another-tag
+
 By default the plugin will try to connect to docker on localhost:2375. Set the DOCKER_HOST 
 environment variable to connect elsewhere. 
 
