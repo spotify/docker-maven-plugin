@@ -125,7 +125,7 @@
     <dependency>
       <groupId>com.spotify</groupId>
       <artifactId>docker-client</artifactId>
-      <version>3.5.9</version>
+      <version>3.5.10-SNAPSHOT</version>
       <classifier>shaded</classifier>
     </dependency>
     <dependency>

@@ -21,6 +21,17 @@
 
 package com.spotify.docker;
 
+import static com.google.common.base.CharMatcher.WHITESPACE;
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Ordering.natural;
+import static com.spotify.docker.Utils.parseImageName;
+import static com.spotify.docker.Utils.pushImage;
+import static com.spotify.docker.Utils.writeImageInfoFile;
+import static com.typesafe.config.ConfigRenderOptions.concise;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -28,15 +39,16 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-
+import com.spotify.docker.client.AnsiClosableProgessHandler;
 import com.spotify.docker.client.AnsiProgressHandler;
+import com.spotify.docker.client.ClosableProgessHandler;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.ProgressHandler;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
-
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -52,6 +64,8 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -63,17 +77,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-
-import static com.google.common.base.CharMatcher.WHITESPACE;
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Ordering.natural;
-import static com.spotify.docker.Utils.parseImageName;
-import static com.spotify.docker.Utils.pushImage;
-import static com.spotify.docker.Utils.writeImageInfoFile;
-import static com.typesafe.config.ConfigRenderOptions.concise;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.emptyList;
 
 /**
  * Used to build docker images.
@@ -90,6 +93,12 @@ public class BuildMojo extends AbstractDockerMojo {
    * The Windows separator character.
    */
   private static final char WINDOWS_SEPARATOR = '\\';
+  
+  /**
+   * File to log output 
+   */
+  @Parameter(property= "logOutput")
+  private String logOutput;
 
   /**
    * Directory containing the Dockerfile. If the value is not set, the plugin will generate a
@@ -319,7 +328,19 @@ public class BuildMojo extends AbstractDockerMojo {
       copyResources(destination);
     }
 
-    buildImage(docker, destination, buildParams());
+    if (logOutput == null) {
+        buildImage(docker, destination, buildParams());
+    } else {
+        File output = new File(logOutput);
+        PrintStream printStream;
+        if (! output.exists()) {
+            printStream = new PrintStream(output);
+        } else {
+            OutputStream os = new FileOutputStream(output);
+            printStream = new PrintStream(os);
+        }
+        buildImage(docker, destination, printStream, buildParams());
+    }    
     tagImage(docker, forceTags);
 
     final DockerBuildInformation buildInfo = new DockerBuildInformation(imageName, getLog());
@@ -526,11 +547,25 @@ public class BuildMojo extends AbstractDockerMojo {
   }
 
   private void buildImage(final DockerClient docker, final String buildDir,
+      final ProgressHandler progressHandler, final DockerClient.BuildParam... buildParams)
+    throws MojoExecutionException, DockerException, IOException, InterruptedException {
+    getLog().info("Building image " + imageName);
+    docker.build(Paths.get(buildDir), imageName, progressHandler, buildParams);
+    getLog().info("Built " + imageName);
+  }
+  
+  private void buildImage(final DockerClient docker, final String buildDir,
+      final PrintStream printStream, final DockerClient.BuildParam... buildParams)
+    throws MojoExecutionException, DockerException, IOException, InterruptedException {
+    try (ClosableProgessHandler handler = new AnsiClosableProgessHandler(printStream)) {
+        buildImage(docker, buildDir, handler, buildParams);
+    }
+  }
+  
+  private void buildImage(final DockerClient docker, final String buildDir,
                           final DockerClient.BuildParam... buildParams)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
-    getLog().info("Building image " + imageName);
-    docker.build(Paths.get(buildDir), imageName, new AnsiProgressHandler(), buildParams);
-    getLog().info("Built " + imageName);
+    buildImage(docker, buildDir, new AnsiProgressHandler(), buildParams);
   }
 
   private void tagImage(final DockerClient docker, boolean forceTags)
