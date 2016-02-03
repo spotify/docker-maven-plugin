@@ -24,6 +24,7 @@ package com.spotify.docker;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.exceptions.ImageNotFoundException;
+import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.RemovedImage;
 import com.spotify.docker.client.shaded.javax.ws.rs.NotFoundException;
 
@@ -62,6 +63,22 @@ public class RemoveImageMojo extends AbstractDockerMojo {
     final String[] imageNameParts = parseImageName(imageName);
     if (imageTags == null) {
       imageTags = new ArrayList<>(1);
+    } else if (imageTags.size() == 1 && imageTags.get(0).equals("*")) {
+        // removal of all tags requested, loop over all images to find tags
+        for (Image currImage : docker.listImages()) {
+            getLog().debug("Found image: " + currImage.toString());
+            String[] parsedRepoTag;
+            for (String repoTag : currImage.repoTags()) {
+                parsedRepoTag = parseImageName(repoTag);
+                // if repo name matches imageName then save the tag for deletion
+                if (parsedRepoTag[0].equals(imageNameParts)) {
+                    imageTags.add(parsedRepoTag[1]);
+                    getLog().info("Adding tag for removal: " + parsedRepoTag[1]);
+                }
+            }
+        }
+        // '*' isn't a valid tag name so remove it from the list
+        imageTags.remove("*");
     }
     imageTags.add(imageNameParts[1]);
 
