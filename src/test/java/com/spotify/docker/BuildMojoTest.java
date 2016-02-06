@@ -453,6 +453,32 @@ public class BuildMojoTest extends AbstractMojoTestCase {
         eq(BuildParam.noCache()));
   }
   
+  public void testLogOutputToFileButFileCannotBeWritten() throws Exception {
+	final File pom = getTestFile("src/test/resources/pom-build-log-output.xml");
+	assertNotNull("Null pom.xml", pom);
+	assertTrue("pom.xml does not exist", pom.exists());
+
+	// Make sure initially the file to be logged does not exist
+	final String outputFileName = "target/docker/file-to-log-output.log";
+	final File outputFile = getTestFile(outputFileName);  
+	assertNotNull("Null output file", outputFile);
+	assertFalse("output file already exists", outputFile.exists());
+	
+	// Force it being a directory
+	assertTrue("Cannot create directory ", outputFile.mkdirs());
+	
+	final BuildMojo mojo = setupMojo(pom);
+	final DockerClient docker = mock(DockerClient.class);
+	try {
+	  mojo.execute(docker);
+	  fail("mojo should have thrown exception because output file cannot be written to");
+	} catch (MojoExecutionException e) {
+	  final String message = "The specified output file does not exist and cannot be created";
+	  assertTrue(String.format("Exception message should have contained '%s'", message),
+	             e.getMessage().contains(message));
+	}
+  }
+  
   public void testLogOutputToFile() throws Exception {
 	final File pom = getTestFile("src/test/resources/pom-build-log-output.xml");
 	assertNotNull("Null pom.xml", pom);

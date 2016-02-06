@@ -340,7 +340,7 @@ public class BuildMojo extends AbstractDockerMojo {
         buildImage(docker, destination, buildParams());
     } else {
         File output = new File(logOutput);
-        if (! output.exists() && ! output.createNewFile()) {
+        if (output.isDirectory() || (! output.exists() && ! output.createNewFile())) {
             throw new MojoExecutionException("The specified output file does not exist and cannot be created");
         } 
         buildImage(docker, destination, output, buildParams());
