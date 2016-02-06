@@ -21,17 +21,34 @@
 
 package com.spotify.docker;
 
-import static com.google.common.base.CharMatcher.WHITESPACE;
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Ordering.natural;
-import static com.spotify.docker.Utils.parseImageName;
-import static com.spotify.docker.Utils.pushImage;
-import static com.spotify.docker.Utils.pushImageTag;
-import static com.spotify.docker.Utils.writeImageInfoFile;
-import static com.typesafe.config.ConfigRenderOptions.concise;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.emptyList;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
+
+import com.spotify.docker.client.AnsiProgressHandler;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.ProgressHandler;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigValue;
+
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.model.Resource;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.PluginParameterExpressionEvaluator;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
+import org.codehaus.plexus.util.DirectoryScanner;
+import org.codehaus.plexus.util.FileUtils;
+import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -49,33 +66,17 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.model.Resource;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.PluginParameterExpressionEvaluator;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
-import org.codehaus.plexus.util.DirectoryScanner;
-import org.codehaus.plexus.util.FileUtils;
-import org.eclipse.jgit.api.errors.GitAPIException;
-
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
-import com.spotify.docker.client.AnsiProgressHandler;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.DockerException;
-import com.spotify.docker.client.ProgressHandler;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigException;
-import com.typesafe.config.ConfigFactory;
-import com.typesafe.config.ConfigValue;
+import static com.google.common.base.CharMatcher.WHITESPACE;
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Ordering.natural;
+import static com.spotify.docker.Utils.parseImageName;
+import static com.spotify.docker.Utils.pushImage;
+import static com.spotify.docker.Utils.pushImageTag;
+import static com.spotify.docker.Utils.writeImageInfoFile;
+import static com.typesafe.config.ConfigRenderOptions.concise;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
 
 /**
  * Used to build docker images.
@@ -555,16 +556,18 @@ public class BuildMojo extends AbstractDockerMojo {
   }
 
   private void buildImage(final DockerClient docker, final String buildDir,
-      final ProgressHandler progressHandler, final DockerClient.BuildParam... buildParams)
-    throws MojoExecutionException, DockerException, IOException, InterruptedException {
+                          final ProgressHandler progressHandler, 
+                          final DockerClient.BuildParam... buildParams)
+      throws MojoExecutionException, DockerException, IOException, InterruptedException {
     getLog().info("Building image " + imageName);
     docker.build(Paths.get(buildDir), imageName, progressHandler, buildParams);
     getLog().info("Built " + imageName);
   }
 
   private void buildImage(final DockerClient docker, final String buildDir,
-      final File outputFile, final DockerClient.BuildParam... buildParams)
-    throws MojoExecutionException, DockerException, IOException, InterruptedException {
+                          final File outputFile, 
+                          final DockerClient.BuildParam... buildParams)
+      throws MojoExecutionException, DockerException, IOException, InterruptedException {
     try (PrintStream printStream = new PrintStream(new FileOutputStream(outputFile, true), true, "UTF-8")) {
         buildImage(docker, buildDir, new AnsiProgressHandler(printStream), buildParams);
     }
