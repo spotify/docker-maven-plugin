@@ -27,6 +27,7 @@ import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Ordering.natural;
 import static com.spotify.docker.Utils.parseImageName;
 import static com.spotify.docker.Utils.pushImage;
+import static com.spotify.docker.Utils.pushImageTag;
 import static com.spotify.docker.Utils.writeImageInfoFile;
 import static com.typesafe.config.ConfigRenderOptions.concise;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -93,9 +94,9 @@ public class BuildMojo extends AbstractDockerMojo {
    * The Windows separator character.
    */
   private static final char WINDOWS_SEPARATOR = '\\';
-  
+
   /**
-   * File to log output 
+   * File to log output
    */
   @Parameter(property= "logOutput")
   private String logOutput;
@@ -129,6 +130,10 @@ public class BuildMojo extends AbstractDockerMojo {
   /** Flag to push image after it is built. Defaults to false. */
   @Parameter(property = "pushImage", defaultValue = "false")
   private boolean pushImage;
+
+  /** Flag to push image using their tags after it is built. Defaults to false. */
+  @Parameter(property = "pushImageTag", defaultValue = "false")
+  private boolean pushImageTag;
 
   /** Flag to use force option while tagging. Defaults to false. */
   @Parameter(property = "forceTags", defaultValue = "false")
@@ -251,6 +256,10 @@ public class BuildMojo extends AbstractDockerMojo {
     return pushImage;
   }
 
+  public boolean getPushImageTag() {
+    return pushImageTag;
+  }
+
   public boolean getForceTags() {
     return forceTags;
   }
@@ -340,7 +349,7 @@ public class BuildMojo extends AbstractDockerMojo {
             printStream = new PrintStream(os);
         }
         buildImage(docker, destination, printStream, buildParams());
-    }    
+    }
     tagImage(docker, forceTags);
 
     final DockerBuildInformation buildInfo = new DockerBuildInformation(imageName, getLog());
@@ -348,6 +357,11 @@ public class BuildMojo extends AbstractDockerMojo {
     if ("docker".equals(mavenProject.getPackaging())) {
       final File imageArtifact = createImageArtifact(mavenProject.getArtifact(), buildInfo);
       mavenProject.getArtifact().setFile(imageArtifact);
+    }
+
+    // Push specific tags specified in pom rather than all images
+    if (pushImageTag) {
+      pushImageTag(docker, imageName, imageTags, getLog());
     }
 
     if (pushImage) {
@@ -553,7 +567,7 @@ public class BuildMojo extends AbstractDockerMojo {
     docker.build(Paths.get(buildDir), imageName, progressHandler, buildParams);
     getLog().info("Built " + imageName);
   }
-  
+
   private void buildImage(final DockerClient docker, final String buildDir,
       final PrintStream printStream, final DockerClient.BuildParam... buildParams)
     throws MojoExecutionException, DockerException, IOException, InterruptedException {
@@ -561,7 +575,7 @@ public class BuildMojo extends AbstractDockerMojo {
         buildImage(docker, buildDir, handler, buildParams);
     }
   }
-  
+
   private void buildImage(final DockerClient docker, final String buildDir,
                           final DockerClient.BuildParam... buildParams)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {

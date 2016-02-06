@@ -4,7 +4,7 @@
 
   <groupId>com.spotify</groupId>
   <artifactId>docker-maven-plugin</artifactId>
-  <version>0.4.0-SNAPSHOT</version>
+  <version>0.4.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
   <name>docker-maven-plugin</name>
   <description>A maven plugin for docker</description>
@@ -125,7 +125,7 @@
     <dependency>
       <groupId>com.spotify</groupId>
       <artifactId>docker-client</artifactId>
-      <version>3.5.10-SNAPSHOT</version>
+      <version>3.5.12-SNAPSHOT</version>
       <classifier>shaded</classifier>
     </dependency>
     <dependency>
@@ -292,7 +292,14 @@
           <findbugsXmlOutputDirectory>${project.build.directory}/findbugs
           </findbugsXmlOutputDirectory>
           <excludeFilterFile>${project.basedir}/findbugs-exclude.xml</excludeFilterFile>
-        </configuration>
+  </configuration>
+        <dependencies>
+	  <dependency>
+	    <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+            <version>1.9.4</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <phase>verify</phase>
