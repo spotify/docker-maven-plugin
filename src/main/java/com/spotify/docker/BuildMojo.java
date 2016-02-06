@@ -97,7 +97,7 @@ public class BuildMojo extends AbstractDockerMojo {
   /**
    * File to log output
    */
-  @Parameter(property= "logOutput")
+  @Parameter(property = "logOutput")
   private String logOutput;
 
   /**
@@ -340,8 +340,10 @@ public class BuildMojo extends AbstractDockerMojo {
         buildImage(docker, destination, buildParams());
     } else {
         File output = new File(logOutput);
-        if (output.isDirectory() || (! output.exists() && (! output.createNewFile() || ! output.canWrite()))) {
-            throw new MojoExecutionException("The specified output file does not exist and cannot be created");
+        if (output.isDirectory() || (!output.exists() && 
+            (!output.createNewFile() || !output.canWrite()))) {
+            throw new MojoExecutionException("The specified output file does not exist and cannot "
+                                             + "be created");
         } 
         buildImage(docker, destination, output, buildParams());
     }
@@ -568,7 +570,8 @@ public class BuildMojo extends AbstractDockerMojo {
                           final File outputFile, 
                           final DockerClient.BuildParam... buildParams)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
-    try (PrintStream printStream = new PrintStream(new FileOutputStream(outputFile, true), true, "UTF-8")) {
+    try (PrintStream printStream = 
+             new PrintStream(new FileOutputStream(outputFile, true), true, "UTF-8")) {
         buildImage(docker, buildDir, new AnsiProgressHandler(printStream), buildParams);
     }
   }
