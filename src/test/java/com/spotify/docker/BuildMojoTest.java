@@ -21,23 +21,15 @@
 
 package com.spotify.docker;
 
-import com.google.common.collect.ImmutableList;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spotify.docker.client.AnsiProgressHandler;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.DockerClient.BuildParam;
-import com.spotify.docker.client.ProgressHandler;
-import com.spotify.docker.client.messages.ProgressMessage;
-
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.MojoExecution;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.testing.AbstractMojoTestCase;
-import org.apache.maven.project.MavenProject;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,13 +45,25 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import org.apache.commons.lang.StringUtils;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.MojoExecution;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.testing.AbstractMojoTestCase;
+import org.apache.maven.project.MavenProject;
+import org.mockito.ArgumentMatcher;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+import com.spotify.docker.client.AnsiProgressHandler;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerClient.BuildParam;
+import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.ProgressHandler;
+import com.spotify.docker.client.messages.ProgressMessage;
 
 public class BuildMojoTest extends AbstractMojoTestCase {
 
@@ -446,6 +450,52 @@ public class BuildMojoTest extends AbstractMojoTestCase {
         anyString(),
         any(ProgressHandler.class),
         eq(BuildParam.noCache()));
+  }
+  
+  public void testLogOutputToFile() throws Exception {
+	final File pom = getTestFile("src/test/resources/pom-build-log-output.xml");
+	assertNotNull("Null pom.xml", pom);
+	assertTrue("pom.xml does not exist", pom.exists());
+
+	// Make sure initially the file to be logged does not exist
+	final String outputFileName = "target/docker/file-to-log-output.log";
+	final File outputFile = getTestFile(outputFileName);  
+	assertNotNull("Null output file", outputFile);
+	assertFalse("output file already exists", outputFile.exists());
+	
+	final BuildMojo mojo = setupMojo(pom);
+	final DockerClient docker = mock(DockerClient.class);
+	
+	// A matcher that grabs the instantiated AnsiProgressHandler and logs a message
+	final String testMessage = "Testing progress is logged to file";
+	ArgumentMatcher<AnsiProgressHandler> matcher = new ArgumentMatcher<AnsiProgressHandler>() {
+
+		@Override
+		public boolean matches(Object argument) {
+			assertTrue(AnsiProgressHandler.class.isInstance(argument));
+			AnsiProgressHandler handler = AnsiProgressHandler.class.cast(argument);
+			ProgressMessage message = new ProgressMessage();
+			message.status(testMessage);
+			try {
+				handler.progress(message);
+			} catch (DockerException e) {
+				fail("Unexpected error");
+			}
+			return true;
+		}
+		
+	};
+
+	when(docker.build(eq(Paths.get("target/docker")), eq("busybox"), argThat(matcher))).thenReturn(StringUtils.EMPTY);
+	
+	mojo.execute(docker);
+	
+	verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"), any(AnsiProgressHandler.class));
+
+	// Make sure output file exists and message is logged
+	assertFileExists(outputFileName);
+	byte[] encoded = Files.readAllBytes(Paths.get(outputFileName));
+	assertEquals(testMessage + System.lineSeparator(), new String(encoded, "UTF-8"));
   }
   
   private BuildMojo setupMojo(final File pom) throws Exception {
