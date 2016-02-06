@@ -33,39 +33,9 @@ import static com.typesafe.config.ConfigRenderOptions.concise;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
-import com.spotify.docker.client.AnsiClosableProgessHandler;
-import com.spotify.docker.client.AnsiProgressHandler;
-import com.spotify.docker.client.ClosableProgessHandler;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.DockerException;
-import com.spotify.docker.client.ProgressHandler;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigException;
-import com.typesafe.config.ConfigFactory;
-import com.typesafe.config.ConfigValue;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.model.Resource;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.PluginParameterExpressionEvaluator;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
-import org.codehaus.plexus.util.DirectoryScanner;
-import org.codehaus.plexus.util.FileUtils;
-import org.eclipse.jgit.api.errors.GitAPIException;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -78,6 +48,34 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.model.Resource;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.PluginParameterExpressionEvaluator;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
+import org.codehaus.plexus.util.DirectoryScanner;
+import org.codehaus.plexus.util.FileUtils;
+import org.eclipse.jgit.api.errors.GitAPIException;
+
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
+import com.spotify.docker.client.AnsiProgressHandler;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.ProgressHandler;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigValue;
 
 /**
  * Used to build docker images.
@@ -341,14 +339,10 @@ public class BuildMojo extends AbstractDockerMojo {
         buildImage(docker, destination, buildParams());
     } else {
         File output = new File(logOutput);
-        PrintStream printStream;
-        if (! output.exists()) {
-            printStream = new PrintStream(output);
-        } else {
-            OutputStream os = new FileOutputStream(output);
-            printStream = new PrintStream(os);
-        }
-        buildImage(docker, destination, printStream, buildParams());
+        if (! output.exists() && ! output.createNewFile()) {
+            throw new MojoExecutionException("The specified output file does not exist and cannot be created");
+        } 
+        buildImage(docker, destination, output, buildParams());
     }
     tagImage(docker, forceTags);
 
@@ -569,10 +563,10 @@ public class BuildMojo extends AbstractDockerMojo {
   }
 
   private void buildImage(final DockerClient docker, final String buildDir,
-      final PrintStream printStream, final DockerClient.BuildParam... buildParams)
+      final File outputFile, final DockerClient.BuildParam... buildParams)
     throws MojoExecutionException, DockerException, IOException, InterruptedException {
-    try (ClosableProgessHandler handler = new AnsiClosableProgessHandler(printStream)) {
-        buildImage(docker, buildDir, handler, buildParams);
+    try (PrintStream printStream = new PrintStream(new FileOutputStream(outputFile, true), true, "UTF-8")) {
+        buildImage(docker, buildDir, new AnsiProgressHandler(printStream), buildParams);
     }
   }
 
