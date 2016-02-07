@@ -453,19 +453,34 @@ public class BuildMojoTest extends AbstractMojoTestCase {
         eq(BuildParam.noCache()));
   }
   
-  public void testLogOutputToFileButFileCannotBeWritten() throws Exception {
+  public void testLogOutputToFileButParentIsFile() throws Exception {
+    testLogOutputToFileButFileCannotBeWritten(false);
+  }
+
+  public void testLogOutputToFileButFileIsDirectory() throws Exception {
+    testLogOutputToFileButFileCannotBeWritten(true);
+  }
+  
+  public void testLogOutputToFileButFileCannotBeWritten(boolean dir) throws Exception {
 	final File pom = getTestFile("src/test/resources/pom-build-log-output.xml");
 	assertNotNull("Null pom.xml", pom);
 	assertTrue("pom.xml does not exist", pom.exists());
 
 	// Make sure initially the file to be logged does not exist
-	final String outputFileName = "target/docker/file-to-log-output.log";
+	final String outputFileName = "target/docker/outputDir/file-to-log-output.log";
 	final File outputFile = getTestFile(outputFileName);  
 	assertNotNull("Null output file", outputFile);
 	assertFalse("output file already exists", outputFile.exists());
 	
-	// Force it being a directory
-	assertTrue("Cannot create directory ", outputFile.mkdirs());
+	if (dir) {
+	    // Force it being a directory
+	    assertTrue("Cannot create directory ", outputFile.mkdirs());
+	} else {
+	    // Force parent is be a file
+	    File parent = outputFile.getParentFile();
+	    parent.getParentFile().mkdirs();
+	    assertTrue("Cannot create parent file ", parent.createNewFile());
+	}
 	
 	final BuildMojo mojo = setupMojo(pom);
 	final DockerClient docker = mock(DockerClient.class);
@@ -473,19 +488,32 @@ public class BuildMojoTest extends AbstractMojoTestCase {
 	  mojo.execute(docker);
 	  fail("mojo should have thrown exception because output file cannot be written to");
 	} catch (MojoExecutionException e) {
-	  final String message = "The specified output file does not exist and cannot be created";
+	  final String message;
+	  if (dir) {
+	      message = "The specified output file is a directory or cannot be written";
+	  } else {
+	      message = "The specified output file's parent is a file";
+	  }
 	  assertTrue(String.format("Exception message should have contained '%s'", message),
 	             e.getMessage().contains(message));
 	}
   }
+
+  public void testLogOutputToNewFile() throws Exception {
+    testLogOutputToFile(true);
+  }
   
-  public void testLogOutputToFile() throws Exception {
+  public void testLogOutputToExistingFile() throws Exception {
+    testLogOutputToFile(false);
+  }
+    
+  private void testLogOutputToFile(boolean newFile) throws Exception {
 	final File pom = getTestFile("src/test/resources/pom-build-log-output.xml");
 	assertNotNull("Null pom.xml", pom);
 	assertTrue("pom.xml does not exist", pom.exists());
 
 	// Make sure initially the file to be logged does not exist
-	final String outputFileName = "target/docker/file-to-log-output.log";
+	final String outputFileName = "target/docker/outputDir/file-to-log-output.log";
 	final File outputFile = getTestFile(outputFileName);  
 	assertNotNull("Null output file", outputFile);
 	assertFalse("output file already exists", outputFile.exists());
@@ -513,9 +541,15 @@ public class BuildMojoTest extends AbstractMojoTestCase {
 		
 	};
 
+    if (! newFile) {
+      File parent = outputFile.getParentFile();
+      assertTrue("Cannot create parent directory", parent.exists() || parent.mkdirs());
+      assertTrue("Cannot create output file", outputFile.createNewFile());
+    }
+           
 	when(docker.build(eq(Paths.get("target/docker")), eq("busybox"), argThat(matcher))).thenReturn(StringUtils.EMPTY);
 	
-	mojo.execute(docker);
+    mojo.execute(docker);
 	
 	verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"), any(AnsiProgressHandler.class));
 

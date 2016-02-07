@@ -337,15 +337,9 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     if (logOutput == null) {
-        buildImage(docker, destination, buildParams());
+      buildImage(docker, destination, buildParams());
     } else {
-        File output = new File(logOutput);
-        if (output.isDirectory() || (!output.exists() && 
-            (!output.createNewFile() || !output.canWrite()))) {
-            throw new MojoExecutionException("The specified output file does not exist and cannot "
-                                             + "be created");
-        } 
-        buildImage(docker, destination, output, buildParams());
+      buildImage(docker, destination, new File(logOutput), buildParams());
     }
     tagImage(docker, forceTags);
 
@@ -565,13 +559,29 @@ public class BuildMojo extends AbstractDockerMojo {
     docker.build(Paths.get(buildDir), imageName, progressHandler, buildParams);
     getLog().info("Built " + imageName);
   }
-
+  
   private void buildImage(final DockerClient docker, final String buildDir,
-                          final File outputFile, 
+                          final File output, 
                           final DockerClient.BuildParam... buildParams)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
+    
+    if (output.isDirectory() || (output.exists() && !output.canWrite())) {
+      throw new MojoExecutionException("The specified output file is a directory or cannot "
+                                       + "be written");
+    }
+    
+    File parent = output.getParentFile();
+    if (parent.isFile()) {
+      throw new MojoExecutionException("The specified output file's parent is a file");
+    }
+    
+    if (!parent.exists() && !parent.mkdirs()) {
+      throw new MojoExecutionException("The specified output file's parent cannot be made a"
+                                       + " directory");
+    }
+    
     try (PrintStream printStream = 
-             new PrintStream(new FileOutputStream(outputFile, true), true, "UTF-8")) {
+             new PrintStream(new FileOutputStream(output, true), true, "UTF-8")) {
         buildImage(docker, buildDir, new AnsiProgressHandler(printStream), buildParams);
     }
   }

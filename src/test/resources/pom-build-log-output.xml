@@ -23,7 +23,7 @@
                     <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
                     <imageName>busybox</imageName>
                     <!-- test base image is pulled -->
-                    <logOutput>target/docker/file-to-log-output.log</logOutput>
+                    <logOutput>target/docker/outputDir/file-to-log-output.log</logOutput>
                 </configuration>
             </plugin>
         </plugins>
