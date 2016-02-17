@@ -146,6 +146,10 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(property = "dockerVolumes")
   private String[] volumes;
 
+  /** The labels for the image */
+  @Parameter(property = "dockerLabels")
+  private String[] labels;
+
   /** The cmd command for the image. Ignored if dockerDirectory is set. */
   @Parameter(property = "dockerCmd")
   private String cmd;
@@ -635,10 +639,17 @@ public class BuildMojo extends AbstractDockerMojo {
       }
     }
 
-    //Add VOLUMES to dockerfile
+    // Add VOLUME's to dockerfile
     if (volumes != null) {
       for (String volume : volumes) {
         commands.add("VOLUME " + volume);
+      }
+    }
+
+    // Add LABEL's to dockerfile
+    if (labels != null) {
+      for (String label : labels) {
+        commands.add("LABEL " + label);
       }
     }
 
