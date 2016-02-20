@@ -117,6 +117,25 @@ In order for this to succeed, at least one imageTag must be present in the confi
       </plugins>
     </build>
 
+Optionally, you can force docker to overwrite your image tags on each new build:
+
+    <build>
+      <plugins>
+        ...
+        <plugin>
+          <configuration>
+            ...
+            <!-- optionally overwrite tags every time image is built with docker:build -->
+            <forceTags>true</forceTags>
+            <imageTags>
+               ...
+            </imageTags>
+          </configuration>
+        </plugin>
+        ...
+      </plugins>
+    </build>
+
 Tags-to-be-pushed can also be specified directly on the command line with
 
     mvn ... docker:build -DpushImageTags -DdockerImageTag=latest -DdockerImageTag=another-tag
