@@ -19,7 +19,7 @@
         <configuration>
           <dockerHost>http://host:2375</dockerHost>
           <!-- test that dockerDirectory works correctly -->
-          <dockerDirectory>src/test/resources/dockerDirectoryArgs</dockerDirectory>
+          <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
           <imageName>busybox</imageName>
           <buildArgs>
             <VERSION>0.1</VERSION>          
