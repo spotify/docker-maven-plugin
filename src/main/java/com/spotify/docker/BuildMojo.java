@@ -32,6 +32,7 @@ import com.google.common.collect.Sets;
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.ProgressHandler;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
@@ -52,6 +53,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -91,6 +93,12 @@ public class BuildMojo extends AbstractDockerMojo {
    * The Windows separator character.
    */
   private static final char WINDOWS_SEPARATOR = '\\';
+
+  /**
+   * File to log output
+   */
+  @Parameter(property = "logOutput")
+  private String logOutput;
 
   /**
    * Directory containing the Dockerfile. If the value is not set, the plugin will generate a
@@ -332,7 +340,11 @@ public class BuildMojo extends AbstractDockerMojo {
       copyResources(destination);
     }
 
-    buildImage(docker, destination, buildParams());
+    if (logOutput == null) {
+      buildImage(docker, destination, buildParams());
+    } else {
+      buildImage(docker, destination, new File(logOutput), buildParams());
+    }
     tagImage(docker, forceTags);
 
     final DockerBuildInformation buildInfo = new DockerBuildInformation(imageName, getLog());
@@ -544,11 +556,44 @@ public class BuildMojo extends AbstractDockerMojo {
   }
 
   private void buildImage(final DockerClient docker, final String buildDir,
+                          final ProgressHandler progressHandler, 
                           final DockerClient.BuildParam... buildParams)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
     getLog().info("Building image " + imageName);
-    docker.build(Paths.get(buildDir), imageName, new AnsiProgressHandler(), buildParams);
+    docker.build(Paths.get(buildDir), imageName, progressHandler, buildParams);
     getLog().info("Built " + imageName);
+  }
+  
+  private void buildImage(final DockerClient docker, final String buildDir,
+                          final File output, 
+                          final DockerClient.BuildParam... buildParams)
+      throws MojoExecutionException, DockerException, IOException, InterruptedException {
+    
+    if (output.isDirectory() || (output.exists() && !output.canWrite())) {
+      throw new MojoExecutionException("The specified output file is a directory or cannot "
+                                       + "be written");
+    }
+    
+    File parent = output.getParentFile();
+    if (parent.isFile()) {
+      throw new MojoExecutionException("The specified output file's parent is a file");
+    }
+    
+    if (!parent.exists() && !parent.mkdirs()) {
+      throw new MojoExecutionException("The specified output file's parent cannot be made a"
+                                       + " directory");
+    }
+    
+    try (PrintStream printStream = 
+             new PrintStream(new FileOutputStream(output, true), true, "UTF-8")) {
+        buildImage(docker, buildDir, new AnsiProgressHandler(printStream), buildParams);
+    }
+  }
+
+  private void buildImage(final DockerClient docker, final String buildDir,
+                          final DockerClient.BuildParam... buildParams)
+      throws MojoExecutionException, DockerException, IOException, InterruptedException {
+    buildImage(docker, buildDir, new AnsiProgressHandler(), buildParams);
   }
 
   private void tagImage(final DockerClient docker, boolean forceTags)
