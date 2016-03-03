@@ -97,6 +97,11 @@ public class BuildMojo extends AbstractDockerMojo {
   private static final char WINDOWS_SEPARATOR = '\\';
 
   /**
+   * Json Object Mapper to encode arguments map 
+   */
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  
+  /**
    * Directory containing the Dockerfile. If the value is not set, the plugin will generate a
    * Dockerfile using the required baseImage value, plus the optional entryPoint, cmd and maintainer
    * values. If this value is set the plugin will use the Dockerfile in the specified folder.
@@ -789,7 +794,7 @@ public class BuildMojo extends AbstractDockerMojo {
     }
     if (!buildArgs.isEmpty()) {
       buildParams.add(DockerClient.BuildParam.create("buildargs", 
-        URLEncoder.encode(new ObjectMapper().writeValueAsString(buildArgs), "UTF-8")));
+        URLEncoder.encode(OBJECT_MAPPER.writeValueAsString(buildArgs), "UTF-8")));
     }
     return buildParams.toArray(new DockerClient.BuildParam[buildParams.size()]);
   }
