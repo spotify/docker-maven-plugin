@@ -21,6 +21,8 @@
 
 package com.spotify.docker;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -52,6 +54,8 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -92,6 +96,11 @@ public class BuildMojo extends AbstractDockerMojo {
    */
   private static final char WINDOWS_SEPARATOR = '\\';
 
+  /**
+   * Json Object Mapper to encode arguments map 
+   */
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  
   /**
    * Directory containing the Dockerfile. If the value is not set, the plugin will generate a
    * Dockerfile using the required baseImage value, plus the optional entryPoint, cmd and maintainer
@@ -233,6 +242,9 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(defaultValue = "${project}")
   private MavenProject mavenProject;
 
+  @Parameter(property = "dockerBuildArgs")
+  private Map<String, String> buildArgs;  
+  
   private PluginParameterExpressionEvaluator expressionEvaluator;
 
   public BuildMojo() {
@@ -771,13 +783,18 @@ public class BuildMojo extends AbstractDockerMojo {
     return path.replace(WINDOWS_SEPARATOR, UNIX_SEPARATOR);
   }
 
-  private DockerClient.BuildParam[] buildParams() {
+  private DockerClient.BuildParam[] buildParams() 
+    throws UnsupportedEncodingException, JsonProcessingException {
     final List<DockerClient.BuildParam> buildParams = Lists.newArrayList();
     if (pullOnBuild) {
       buildParams.add(DockerClient.BuildParam.pullNewerImage());
     }
     if (noCache) {
       buildParams.add(DockerClient.BuildParam.noCache());
+    }
+    if (!buildArgs.isEmpty()) {
+      buildParams.add(DockerClient.BuildParam.create("buildargs", 
+        URLEncoder.encode(OBJECT_MAPPER.writeValueAsString(buildArgs), "UTF-8")));
     }
     return buildParams.toArray(new DockerClient.BuildParam[buildParams.size()]);
   }

@@ -200,6 +200,21 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     assertFilesCopied();
   }
 
+  public void testBuildWithDockerDirectoryWithArgs() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-docker-directory-args.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+
+    mojo.execute(docker);
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+                         any(AnsiProgressHandler.class), 
+                         eq(DockerClient.BuildParam.create("buildargs", "%7B%22VERSION%22%3A%220.1%22%7D")));
+    assertFilesCopied();
+  }
+  
   public void testBuildWithPush() throws Exception {
     final File pom = getTestFile("src/test/resources/pom-build-push.xml");
     assertNotNull("Null pom.xml", pom);

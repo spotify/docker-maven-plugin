@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <name>Docker Maven Plugin Test Pom</name>
+  <groupId>com.spotify</groupId>
+  <artifactId>docker-maven-plugin-test</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>0.1-SNAPSHOT</version>
+        <configuration>
+          <dockerHost>http://host:2375</dockerHost>
+          <!-- test that dockerDirectory works correctly -->
+          <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
+          <imageName>busybox</imageName>
+          <buildArgs>
+            <VERSION>0.1</VERSION>          
+          </buildArgs>
+          <resources>
+            <resource>
+              <!-- test we handle all elements correctly -->
+              <targetPath>resources</targetPath>
+              <directory>src/test/resources/copy1</directory>
+              <include>**/*.xml</include>
+              <exclude>**/*exclude*</exclude>
+            </resource>
+            <resource>
+              <!-- test we handle missing elements correctly -->
+              <directory>src/test/resources/copy2</directory>
+            </resource>
+          </resources>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
