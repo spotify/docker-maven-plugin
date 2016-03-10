@@ -4,7 +4,7 @@
 
   <groupId>com.spotify</groupId>
   <artifactId>docker-maven-plugin</artifactId>
-  <version>0.3.6-SNAPSHOT</version>
+  <version>0.4.5-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
   <name>docker-maven-plugin</name>
   <description>A maven plugin for docker</description>
@@ -125,7 +125,7 @@
     <dependency>
       <groupId>com.spotify</groupId>
       <artifactId>docker-client</artifactId>
-      <version>3.2.2-SNAPSHOT</version>
+      <version>3.6.1</version>
       <classifier>shaded</classifier>
     </dependency>
     <dependency>
@@ -142,12 +142,12 @@
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-core</artifactId>
-      <version>3.2.1</version>
+      <version>3.3.3</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-artifact</artifactId>
-      <version>3.2.1</version>
+      <version>3.3.3</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jgit</groupId>
@@ -157,7 +157,7 @@
     <dependency>
       <groupId>org.apache.maven.plugin-testing</groupId>
       <artifactId>maven-plugin-testing-harness</artifactId>
-      <version>3.1.0</version>
+      <version>3.3.0</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -174,13 +174,19 @@
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-compat</artifactId>
-      <version>3.1.1</version>
+      <version>3.3.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
       <version>1.10.19</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>eu.codearte.catch-exception</groupId>
+      <artifactId>catch-exception</artifactId>
+      <version>1.4.4</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -203,16 +209,6 @@
     </dependency>
   </dependencies>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>14.0.1</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-
   <build>
     <testResources>
       <testResource>
@@ -234,7 +230,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>3.2</version>
+        <version>3.4</version>
         <configuration>
           <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
         </configuration>
@@ -296,7 +292,14 @@
           <findbugsXmlOutputDirectory>${project.build.directory}/findbugs
           </findbugsXmlOutputDirectory>
           <excludeFilterFile>${project.basedir}/findbugs-exclude.xml</excludeFilterFile>
-        </configuration>
+  </configuration>
+        <dependencies>
+	  <dependency>
+	    <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+            <version>1.9.4</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <phase>verify</phase>

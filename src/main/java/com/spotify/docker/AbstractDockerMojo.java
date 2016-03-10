@@ -21,8 +21,6 @@
 
 package com.spotify.docker;
 
-import com.google.common.annotations.VisibleForTesting;
-
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificateException;
 import com.spotify.docker.client.DockerClient;
@@ -40,10 +38,10 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
-import java.io.IOException;
-
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.spotify.docker.client.DefaultDockerClient.NO_TIMEOUT;
+
+import java.io.IOException;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
@@ -78,40 +76,58 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   @Parameter(property = "registryUrl")
   private String registryUrl;
 
-  protected abstract void execute(final DockerClient dockerClient) throws Exception;
+  /**
+   * Number of retries for failing pushes, defaults to 5.
+   */
+  @Parameter(property = "retryPushCount", defaultValue = "5")
+  private int retryPushCount;
 
-  @Override
+  /**
+   * Retry timeout for failing pushes, defaults to 10 seconds.
+   */
+  @Parameter(property = "retryPushTimeout", defaultValue = "10000")
+  private int retryPushTimeout;
+
+  public int getRetryPushTimeout() {
+    return retryPushTimeout;
+  }
+
+  public int getRetryPushCount() {
+    return retryPushCount;
+  };
+
   public void execute() throws MojoExecutionException {
-    try (DockerClient client = getDockerClient()) {
+    DockerClient client = null;
+    try {
+      final DefaultDockerClient.Builder builder = getBuilder();
+
+      final String dockerHost = rawDockerHost();
+      if (!isNullOrEmpty(dockerHost)) {
+        builder.uri(dockerHost);
+      }
+
+      final AuthConfig authConfig = authConfig();
+      if (authConfig != null) {
+        builder.authConfig(authConfig);
+      }
+
+      client = builder.build();
       execute(client);
     } catch (Exception e) {
       throw new MojoExecutionException("Exception caught", e);
+    } finally {
+      if (client != null) {
+        client.close();
+      }
     }
   }
 
-  private DockerClient getDockerClient()
-      throws DockerCertificateException, MojoExecutionException, SecDispatcherException {
-
-    final DefaultDockerClient.Builder builder = getBuilder();
-
-    final String dockerHost = rawDockerHost();
-    if (!isNullOrEmpty(dockerHost)) {
-      builder.uri(dockerHost);
-    }
-
-    final AuthConfig authConfig = authConfig();
-    if (authConfig != null) {
-      builder.authConfig(authConfig);
-    }
-
-    return builder.build();
-  }
-
-  @VisibleForTesting
   protected DefaultDockerClient.Builder getBuilder() throws DockerCertificateException {
     return DefaultDockerClient.fromEnv()
-        .readTimeoutMillis(NO_TIMEOUT);
+      .readTimeoutMillis(NO_TIMEOUT);
   }
+
+  protected abstract void execute(final DockerClient dockerClient) throws Exception;
 
   protected String rawDockerHost() {
     return dockerHost;
@@ -217,8 +233,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     try {
       return AuthConfig.fromDockerConfig().build();
     } catch (IOException e) {
-      getLog()
-          .warn("IOException while reading authentication configuration from .docker directory", e);
+      getLog().warn("Error reading authentication configuration from docker config.", e);
     }
     return null;
   }

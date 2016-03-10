@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <name>Docker Maven Plugin Test Pom</name>
+  <groupId>com.spotify</groupId>
+  <artifactId>docker-maven-plugin-test</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>0.1-SNAPSHOT</version>
+        <configuration>
+          <!-- a DockerFile should be generated since dockerDirectory is not specified -->
+          <baseImage>busybox</baseImage>
+          <maintainer>user</maintainer>
+          <dockerHost>http://host:2375</dockerHost>
+          <imageName>busybox</imageName>
+          <labels>
+            <label>a=b</label>
+            <label>x="y"</label>
+          </labels>
+          <entryPoint>date</entryPoint>
+          <env>
+            <FOO>BAR</FOO>
+          </env>
+          <exposes>
+            <expose>8081</expose>
+            <expose>8080</expose>
+          </exposes>
+          <cmd>-u</cmd>
+          <!-- same copying tests as pom-build-docker-directory.xml, but make sure it works with auto-generated -->
+          <!-- docker file. pom-build-docker-directory.xml specified its own docker directory-->
+          <resources>
+            <resource>
+              <!-- test we handle all elements correctly -->
+              <targetPath>resources</targetPath>
+              <directory>src/test/resources/copy1</directory>
+              <include>**/*.xml</include>
+              <exclude>**/*exclude*</exclude>
+            </resource>
+            <resource>
+              <!-- test we handle missing elements correctly -->
+              <directory>src/test/resources/copy2</directory>
+            </resource>
+          </resources>
+          <runs>
+            <run>ln -s /a /b</run>
+            <run>wget 127.0.0.1:8080</run>
+          </runs>
+          <workdir>/opt/app</workdir>
+          <user>app</user>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -26,18 +26,22 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerException;
 import com.spotify.docker.client.ProgressHandler;
 import com.spotify.docker.client.messages.ProgressMessage;
-
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
 import java.io.IOException;
+import java.util.List;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.lang.Thread.sleep;
 
 public class Utils {
+
+  public static final String PUSH_FAIL_WARN_TEMPLATE = "Failed to push %s,"
+          + " retrying in %d seconds (%d/%d).";
 
   public static String[] parseImageName(String imageName) throws MojoExecutionException {
     if (isNullOrEmpty(imageName)) {
@@ -65,22 +69,59 @@ public class Utils {
   }
 
   public static void pushImage(DockerClient docker, String imageName, Log log,
-                               final DockerBuildInformation buildInfo)
-      throws MojoExecutionException, DockerException, IOException, InterruptedException {
-      log.info("Pushing " + imageName);
+                               final DockerBuildInformation buildInfo,
+                               int retryPushCount, int retryPushTimeout)
+          throws MojoExecutionException, DockerException, IOException, InterruptedException {
+    int attempt = 0;
+    do {
+      final AnsiProgressHandler ansiProgressHandler = new AnsiProgressHandler();
+      final DigestExtractingProgressHandler handler = new DigestExtractingProgressHandler(
+              ansiProgressHandler);
 
-    final AnsiProgressHandler ansiProgressHandler = new AnsiProgressHandler();
-    final DigestExtractingProgressHandler handler = new DigestExtractingProgressHandler(
-        ansiProgressHandler);
-
-    docker.push(imageName, handler);
-
-    if (buildInfo != null) {
-      final String imageNameWithoutTag = parseImageName(imageName)[0];
-      buildInfo.setDigest(imageNameWithoutTag + "@" + handler.digest());
-    }
+      try {
+        log.info("Pushing " + imageName);
+        docker.push(imageName, handler);
+        // A concurrent push raises a generic DockerException and not
+        // the more logical ImagePushFailedException. Hence the rather
+        // wide catch clause.
+      } catch (DockerException e) {
+        if (attempt < retryPushCount) {
+          log.warn(String.format(PUSH_FAIL_WARN_TEMPLATE
+                  , imageName
+                  , retryPushTimeout / 1000
+                  , attempt + 1
+                  , retryPushCount));
+          sleep(retryPushTimeout);
+          continue;
+        } else {
+          throw e;
+        }
+      }
+      if (buildInfo != null) {
+        final String imageNameWithoutTag = parseImageName(imageName)[0];
+        buildInfo.setDigest(imageNameWithoutTag + "@" + handler.digest());
+      }
+      break;
+    } while (attempt++ <= retryPushCount);
   }
 
+  // push just the tags listed in the pom rather than all images using imageName
+  public static void pushImageTag(DockerClient docker, String imageName,
+                                List<String> imageTags, Log log)
+      throws MojoExecutionException, DockerException, IOException, InterruptedException {
+      // tags should not be empty if you have specified the option to push tags
+      if (imageTags.isEmpty()) {
+        throw new MojoExecutionException("You have used option \"pushImageTag\" but have"
+                                         + " not specified an \"imageTag\" in your"
+                                         + " docker-maven-client's plugin configuration");
+      }
+      for (final String imageTag : imageTags) {
+       final String imageNameWithTag = imageName + ":" + imageTag;
+       log.info("Pushing " + imageName + ":" + imageTag);
+       docker.push(imageNameWithTag, new AnsiProgressHandler());
+      }
+  }
+  
   public static void writeImageInfoFile(final DockerBuildInformation buildInfo,
                                         final String tagInfoFile) throws IOException {
     final Path imageInfoPath = Paths.get(tagInfoFile);

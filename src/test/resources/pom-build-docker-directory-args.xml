@@ -10,10 +10,6 @@
   <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-
   <build>
     <plugins>
       <plugin>
@@ -22,18 +18,25 @@
         <version>0.1-SNAPSHOT</version>
         <configuration>
           <dockerHost>http://host:2375</dockerHost>
+          <!-- test that dockerDirectory works correctly -->
+          <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
           <imageName>busybox</imageName>
-          <retryPushTimeout>1</retryPushTimeout>
-          <retryPushCount>3</retryPushCount>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.3</version>
-        <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <buildArgs>
+            <VERSION>0.1</VERSION>          
+          </buildArgs>
+          <resources>
+            <resource>
+              <!-- test we handle all elements correctly -->
+              <targetPath>resources</targetPath>
+              <directory>src/test/resources/copy1</directory>
+              <include>**/*.xml</include>
+              <exclude>**/*exclude*</exclude>
+            </resource>
+            <resource>
+              <!-- test we handle missing elements correctly -->
+              <directory>src/test/resources/copy2</directory>
+            </resource>
+          </resources>
         </configuration>
       </plugin>
     </plugins>

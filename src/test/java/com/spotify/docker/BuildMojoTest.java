@@ -21,22 +21,21 @@
 
 package com.spotify.docker;
 
+import com.google.common.collect.ImmutableList;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerClient.BuildParam;
 import com.spotify.docker.client.ProgressHandler;
 import com.spotify.docker.client.messages.ProgressMessage;
 
-import org.apache.maven.execution.DefaultMavenExecutionRequest;
-import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectBuilder;
-import org.apache.maven.project.ProjectBuildingRequest;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -61,7 +60,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class BuildMojoTest extends AbstractMojoTestCase {
 
@@ -70,15 +68,68 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "MAINTAINER user",
       "ENV FOO BAR",
       "WORKDIR /opt/app",
-      "ADD resources/parent/child/child.xml resources/parent/child/child.xml",
-      "ADD resources/parent/parent.xml resources/parent/parent.xml",
-      "ADD copy2.json copy2.json",
+      "ADD resources/parent/child/child.xml resources/parent/child/",
+      "ADD resources/parent/parent.xml resources/parent/",
+      "ADD copy2.json .",
       "RUN ln -s /a /b",
       "RUN wget 127.0.0.1:8080",
       "EXPOSE 8080 8081",
       "USER app",
       "ENTRYPOINT date",
       "CMD [\"-u\"]"
+  );
+
+  private static final List<String> GENERATED_DOCKERFILE_WITH_VOLUMES = Arrays.asList(
+      "FROM busybox",
+      "MAINTAINER user",
+      "ENV FOO BAR",
+      "WORKDIR /opt/app",
+      "ADD resources/parent/child/child.xml resources/parent/child/",
+      "ADD resources/parent/parent.xml resources/parent/",
+      "ADD copy2.json .",
+      "RUN ln -s /a /b",
+      "RUN wget 127.0.0.1:8080",
+      "EXPOSE 8080 8081",
+      "USER app",
+      "ENTRYPOINT date",
+      "CMD [\"-u\"]",
+      "VOLUME /example0",
+      "VOLUME /example1",
+      "VOLUME /example2"
+  );
+
+  private static final List<String> GENERATED_DOCKERFILE_WITH_LABELS = Arrays.asList(
+      "FROM busybox",
+      "MAINTAINER user",
+      "ENV FOO BAR",
+      "WORKDIR /opt/app",
+      "ADD resources/parent/child/child.xml resources/parent/child/",
+      "ADD resources/parent/parent.xml resources/parent/",
+      "ADD copy2.json .",
+      "RUN ln -s /a /b",
+      "RUN wget 127.0.0.1:8080",
+      "EXPOSE 8080 8081",
+      "USER app",
+      "ENTRYPOINT date",
+      "CMD [\"-u\"]",
+      "LABEL a=b",
+      "LABEL x=\"y\""
+  );
+
+  private static final List<String> GENERATED_DOCKERFILE_WITH_SQUASH_COMMANDS = Arrays.asList(
+          "FROM busybox",
+          "MAINTAINER user",
+          "ENV FOO BAR",
+          "WORKDIR /opt/app",
+          "ADD resources/parent/child/child.xml resources/parent/child/",
+          "ADD resources/parent/parent.xml resources/parent/",
+          "ADD copy2.json .",
+          "RUN ln -s /a /b &&\\",
+          "\twget 127.0.0.1:8080",
+          "EXPOSE 8080 8081",
+          "USER app",
+          "ENTRYPOINT date",
+          "CMD [\"-u\"]"
   );
 
   private static final List<String> PROFILE_GENERATED_DOCKERFILE = Arrays.asList(
@@ -88,7 +139,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "ENV FOO BAR",
       "ENV FOOZ BARZ",
       "ENV PROPERTY_HELLO HELLO_VALUE",
-      "ADD /xml/pom-build-with-profile.xml /xml/pom-build-with-profile.xml",
+      "ADD /xml/pom-build-with-profile.xml /xml/",
       "EXPOSE 8080 8081 8082",
       "ENTRYPOINT date",
       "CMD [\"-u\"]"
@@ -98,6 +149,41 @@ public class BuildMojoTest extends AbstractMojoTestCase {
   protected void setUp() throws Exception {
     super.setUp();
     deleteDirectory("target/docker");
+  }
+
+  //tests the docker volumes feature
+  public void testBuildWithDockerVolumes() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-docker-volumes.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+
+    mojo.execute(docker);
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+                         any(AnsiProgressHandler.class));
+    assertFilesCopied();
+
+    assertEquals("wrong dockerfile contents", GENERATED_DOCKERFILE_WITH_VOLUMES,
+                 Files.readAllLines(Paths.get("target/docker/Dockerfile"), UTF_8));
+  }
+
+  public void testBuildWithDockerLabels() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-docker-labels.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+
+    mojo.execute(docker);
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+                         any(AnsiProgressHandler.class));
+    assertFilesCopied();
+
+    assertEquals("wrong dockerfile contents", GENERATED_DOCKERFILE_WITH_LABELS,
+                 Files.readAllLines(Paths.get("target/docker/Dockerfile"), UTF_8));
   }
 
   public void testBuildWithDockerDirectory() throws Exception {
@@ -114,6 +200,21 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     assertFilesCopied();
   }
 
+  public void testBuildWithDockerDirectoryWithArgs() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-docker-directory-args.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+
+    mojo.execute(docker);
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+                         any(AnsiProgressHandler.class), 
+                         eq(DockerClient.BuildParam.create("buildargs", "%7B%22VERSION%22%3A%220.1%22%7D")));
+    assertFilesCopied();
+  }
+  
   public void testBuildWithPush() throws Exception {
     final File pom = getTestFile("src/test/resources/pom-build-push.xml");
     assertNotNull("Null pom.xml", pom);
@@ -210,7 +311,57 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     mojo.execute(docker);
 
     verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
-                         any(AnsiProgressHandler.class), any(DockerClient.BuildParameter.class));
+                         any(AnsiProgressHandler.class), any(BuildParam.class));
+  }
+
+  public void testBuildWithPushTag() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-push-tag.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+    mojo.execute(docker);
+
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+                         any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:latest"), any(AnsiProgressHandler.class));
+  }
+
+  public void testBuildWithMultiplePushTag() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-push-tags.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+    mojo.execute(docker);
+
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+                         any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:late"), any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:later"), any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:latest"), any(AnsiProgressHandler.class));
+  }
+
+  public void testBuildWithInvalidPushTag() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-missing-push-tags.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+
+    try {
+      mojo.execute(docker);
+      fail("mojo should have thrown exception because imageTag is not defined in pom");
+    } catch (MojoExecutionException e) {
+      final String message = "You have used option \"pushImageTag\" but have"
+                              + " not specified an \"imageTag\" in your"
+                              + " docker-maven-client's plugin configuration" ;
+      assertTrue(String.format("Exception message should have contained '%s'", message),
+                 e.getMessage().contains(message));
+    }
   }
 
   public void testBuildWithGeneratedDockerfile() throws Exception {
@@ -227,6 +378,45 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     assertFilesCopied();
     assertEquals("wrong dockerfile contents", GENERATED_DOCKERFILE,
                  Files.readAllLines(Paths.get("target/docker/Dockerfile"), UTF_8));
+  }
+
+  public void testBuildWithGeneratedDockerfileWithSquashCommands() throws Exception {
+      final File pom = getTestFile("src/test/resources/pom-build-generated-dockerfile-with-squash-commands.xml");
+      assertNotNull("Null pom.xml", pom);
+      assertTrue("pom.xml does not exist", pom.exists());
+
+      final BuildMojo mojo = setupMojo(pom);
+      final DockerClient docker = mock(DockerClient.class);
+      mojo.execute(docker);
+
+      verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
+                           any(AnsiProgressHandler.class));
+      assertFilesCopied();
+      assertEquals("wrong dockerfile contents", GENERATED_DOCKERFILE_WITH_SQUASH_COMMANDS,
+                   Files.readAllLines(Paths.get("target/docker/Dockerfile"), UTF_8));
+    }
+
+  public void testBuildGeneratedDockerFile_CopiesEntireDirectory() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-copy-entire-directory.xml");
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+    mojo.execute(docker);
+
+    verify(docker).build(eq(Paths.get("target/docker")), eq("test-copied-directory"),
+        any(AnsiProgressHandler.class));
+
+    List<String> expectedDockerFileContents = ImmutableList.of(
+        "FROM busybox",
+        "ADD /data /data",
+        "ENTRYPOINT echo"
+    );
+
+    assertEquals("wrong dockerfile contents", expectedDockerFileContents,
+        Files.readAllLines(Paths.get("target/docker/Dockerfile"), UTF_8));
+
+    assertFileExists("target/docker/data/file.txt");
+    assertFileExists("target/docker/data/nested/file2");
   }
 
   public void testBuildWithProfile() throws Exception {
@@ -286,12 +476,37 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     new File(filePath).deleteOnExit();
   }
 
+  public void testPullOnBuild() throws Exception {
+    final BuildMojo mojo = setupMojo(getTestFile("src/test/resources/pom-build-pull-on-build.xml"));
+    final DockerClient docker = mock(DockerClient.class);
+
+    mojo.execute(docker);
+
+    verify(docker).build(any(Path.class),
+        anyString(),
+        any(ProgressHandler.class),
+        eq(BuildParam.pullNewerImage()));
+  }
+
+  public void testNoCache() throws Exception {
+    final BuildMojo mojo = setupMojo(getTestFile("src/test/resources/pom-build-no-cache.xml"));
+    final DockerClient docker = mock(DockerClient.class);
+
+    mojo.execute(docker);
+
+    verify(docker).build(any(Path.class),
+        anyString(),
+        any(ProgressHandler.class),
+        eq(BuildParam.noCache()));
+  }
+  
   private BuildMojo setupMojo(final File pom) throws Exception {
-    final MavenExecutionRequest executionRequest = new DefaultMavenExecutionRequest();
-    final ProjectBuildingRequest buildingRequest = executionRequest.getProjectBuildingRequest();
-    final ProjectBuilder projectBuilder = this.lookup(ProjectBuilder.class);
-    final MavenProject project = projectBuilder.build(pom, buildingRequest).getProject();
+    final MavenProject project = new ProjectStub(pom);
     final MavenSession session = newMavenSession(project);
+    // for some reason the superclass method newMavenSession() does not copy properties from the
+    // project model to the session. This is needed for the use of ExpressionEvaluator in BuildMojo.
+    session.getRequest().setUserProperties(project.getModel().getProperties());
+
     final MojoExecution execution = newMojoExecution("build");
     final BuildMojo mojo = (BuildMojo) this.lookupConfiguredMojo(session, execution);
     mojo.buildDirectory = "target";

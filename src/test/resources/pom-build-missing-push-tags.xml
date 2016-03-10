@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <name>Docker Maven Plugin Test Pom</name>
+    <groupId>com.spotify</groupId>
+    <artifactId>docker-maven-plugin-test</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.1-SNAPSHOT</version>
+                <configuration>
+                    <!-- we have to supply values for all params because unit testing framework -->
+                    <!-- doesn't set default values even though the are set in mojo-->
+                    <dockerHost>http://host:2375</dockerHost>
+                    <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
+		    <imageName>busybox</imageName>
+                    <!-- test image tag is pushed -->
+                    <pushImageTag>true</pushImageTag>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
