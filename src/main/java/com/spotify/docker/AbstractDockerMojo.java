@@ -231,9 +231,11 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
     // fall back to using the .docker configuration file
     try {
-      return AuthConfig.fromDockerConfig().build();
+      return AuthConfig.fromDockerConfig(registryUrl).build();
     } catch (IOException e) {
       getLog().warn("Error reading authentication configuration from docker config.", e);
+    } catch (RuntimeException e) {
+      getLog().warn(e.getLocalizedMessage());
     }
     return null;
   }
