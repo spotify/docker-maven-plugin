@@ -21,6 +21,8 @@
 
 package com.spotify.docker;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -46,11 +48,14 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
 import org.codehaus.plexus.util.DirectoryScanner;
+import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -69,6 +74,7 @@ import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Ordering.natural;
 import static com.spotify.docker.Utils.parseImageName;
 import static com.spotify.docker.Utils.pushImage;
+import static com.spotify.docker.Utils.pushImageTag;
 import static com.spotify.docker.Utils.writeImageInfoFile;
 import static com.typesafe.config.ConfigRenderOptions.concise;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -91,6 +97,11 @@ public class BuildMojo extends AbstractDockerMojo {
   private static final char WINDOWS_SEPARATOR = '\\';
 
   /**
+   * Json Object Mapper to encode arguments map 
+   */
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  
+  /**
    * Directory containing the Dockerfile. If the value is not set, the plugin will generate a
    * Dockerfile using the required baseImage value, plus the optional entryPoint, cmd and maintainer
    * values. If this value is set the plugin will use the Dockerfile in the specified folder.
@@ -106,14 +117,23 @@ public class BuildMojo extends AbstractDockerMojo {
   private boolean skipDockerBuild;
 
   /**
-   * Flag to attempt to pull base images even if older images exists locally.
+   * Flag to attempt to pull base images even if older images exists locally. Sends the equivalent
+   * of `--pull=true` to Docker daemon when building the image.
    */
   @Parameter(property = "pullOnBuild", defaultValue = "false")
   private boolean pullOnBuild;
 
+  /** Set to true to pass the `--no-cache` flag to the Docker daemon when building an image. */
+  @Parameter(property = "noCache", defaultValue = "false")
+  private boolean noCache;
+
   /** Flag to push image after it is built. Defaults to false. */
   @Parameter(property = "pushImage", defaultValue = "false")
   private boolean pushImage;
+
+  /** Flag to push image using their tags after it is built. Defaults to false. */
+  @Parameter(property = "pushImageTag", defaultValue = "false")
+  private boolean pushImageTag;
 
   /** Flag to use force option while tagging. Defaults to false. */
   @Parameter(property = "forceTags", defaultValue = "false")
@@ -130,6 +150,14 @@ public class BuildMojo extends AbstractDockerMojo {
   /** The entry point of the image. Ignored if dockerDirectory is set. */
   @Parameter(property = "dockerEntryPoint")
   private String entryPoint;
+
+  /** The volumes for the image */
+  @Parameter(property = "dockerVolumes")
+  private String[] volumes;
+
+  /** The labels for the image */
+  @Parameter(property = "dockerLabels")
+  private String[] labels;
 
   /** The cmd command for the image. Ignored if dockerDirectory is set. */
   @Parameter(property = "dockerCmd")
@@ -150,6 +178,10 @@ public class BuildMojo extends AbstractDockerMojo {
   private List<String> runs;
 
   private List<String> runList;
+
+  /** Flag to squash all run commands into one layer. Defaults to false. */
+  @Parameter(property = "squashRunCommands", defaultValue = "false")
+  private boolean squashRunCommands;
 
   /** All resources will be copied to this directory before building the image. */
   @Parameter(property = "project.build.directory")
@@ -210,6 +242,9 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(defaultValue = "${project}")
   private MavenProject mavenProject;
 
+  @Parameter(property = "dockerBuildArgs")
+  private Map<String, String> buildArgs;  
+  
   private PluginParameterExpressionEvaluator expressionEvaluator;
 
   public BuildMojo() {
@@ -226,6 +261,10 @@ public class BuildMojo extends AbstractDockerMojo {
 
   public boolean getPushImage() {
     return pushImage;
+  }
+
+  public boolean getPushImageTag() {
+    return pushImageTag;
   }
 
   public boolean getForceTags() {
@@ -294,7 +333,7 @@ public class BuildMojo extends AbstractDockerMojo {
     }
     mavenProject.getProperties().put("imageName", imageName);
 
-    final String destination = Paths.get(buildDirectory, "docker").toString();
+    final String destination = getDestination();
     if (dockerDirectory == null) {
       final List<String> copiedPaths = copyResources(destination);
       createDockerFile(destination, copiedPaths);
@@ -315,12 +354,21 @@ public class BuildMojo extends AbstractDockerMojo {
       mavenProject.getArtifact().setFile(imageArtifact);
     }
 
+    // Push specific tags specified in pom rather than all images
+    if (pushImageTag) {
+      pushImageTag(docker, imageName, imageTags, getLog());
+    }
+
     if (pushImage) {
-      pushImage(docker, imageName, getLog(), buildInfo);
+      pushImage(docker, imageName, getLog(), buildInfo, getRetryPushCount(), getRetryPushTimeout());
     }
 
     // Write image info file
     writeImageInfoFile(buildInfo, tagInfoFile);
+  }
+
+  private String getDestination() {
+    return Paths.get(buildDirectory, "docker").toString();
   }
 
   private File createImageArtifact(final Artifact mainArtifact,
@@ -508,10 +556,10 @@ public class BuildMojo extends AbstractDockerMojo {
   }
 
   private void buildImage(final DockerClient docker, final String buildDir,
-                          final DockerClient.BuildParameter... buildParameters)
+                          final DockerClient.BuildParam... buildParams)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
     getLog().info("Building image " + imageName);
-    docker.build(Paths.get(buildDir), imageName, new AnsiProgressHandler(), buildParameters);
+    docker.build(Paths.get(buildDir), imageName, new AnsiProgressHandler(), buildParams);
     getLog().info("Built " + imageName);
   }
 
@@ -550,12 +598,16 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     for (String file : filesToAdd) {
-      commands.add(String.format("ADD %s %s", file, file));
+      commands.add(String.format("ADD %s %s", file, normalizeDest(file)));
     }
 
     if (runList != null && !runList.isEmpty()) {
-      for (final String run : runList) {
-        commands.add("RUN " + run);
+      if (squashRunCommands) {
+        commands.add("RUN " + Joiner.on(" &&\\\n\t").join(runList));
+      } else {
+        for (final String run : runList) {
+          commands.add("RUN " + run);
+        }
       }
     }
 
@@ -599,9 +651,57 @@ public class BuildMojo extends AbstractDockerMojo {
       }
     }
 
+    // Add VOLUME's to dockerfile
+    if (volumes != null) {
+      for (String volume : volumes) {
+        commands.add("VOLUME " + volume);
+      }
+    }
+
+    // Add LABEL's to dockerfile
+    if (labels != null) {
+      for (String label : labels) {
+        commands.add("LABEL " + label);
+      }
+    }
+
+    getLog().debug("Writing Dockerfile:" + System.lineSeparator() +
+                   Joiner.on(System.lineSeparator()).join(commands));
+
     // this will overwrite an existing file
     Files.createDirectories(Paths.get(directory));
     Files.write(Paths.get(directory, "Dockerfile"), commands, UTF_8);
+  }
+
+  private String normalizeDest(final String filePath) {
+    // if the path is a file (i.e. not a directory), remove the last part of the path so that we
+    // end up with:
+    //   ADD foo/bar.txt foo/
+    // instead of
+    //   ADD foo/bar.txt foo/bar.txt
+    // This is to prevent issues when adding tar.gz or other archives where Docker will
+    // automatically expand the archive into the "dest", so
+    //  ADD foo/x.tar.gz foo/x.tar.gz
+    // results in x.tar.gz being expanded *under* the path foo/x.tar.gz/stuff...
+    final File file = new File(filePath);
+
+    final String dest;
+    // need to know the path relative to destination to test if it is a file or directory,
+    // but only remove the last part of the path if there is a parent (i.e. don't remove a
+    // parent path segment from "file.txt")
+    if (new File(getDestination(), filePath).isFile()) {
+      if (file.getParent() != null) {
+        // remove file part of path
+        dest = separatorsToUnix(file.getParent()) + "/";
+      } else {
+        // working with a simple "ADD file.txt"
+        dest = ".";
+      }
+    } else {
+      dest = separatorsToUnix(file.getPath());
+    }
+
+    return dest;
   }
 
   private List<String> copyResources(String destination) throws IOException {
@@ -636,18 +736,23 @@ public class BuildMojo extends AbstractDockerMojo {
       final String targetPath = resource.getTargetPath() == null ? "" : resource.getTargetPath();
 
       if (copyWholeDir) {
+        final Path destPath = Paths.get(destination, targetPath);
+        getLog().info(String.format("Copying dir %s -> %s", source, destPath));
+
+        Files.createDirectories(destPath);
+        FileUtils.copyDirectoryStructure(source, destPath.toFile());
         copiedPaths.add(separatorsToUnix(targetPath));
       } else {
         for (String included : includedFiles) {
-          final Path sourcePath = Paths.get(resource.getDirectory(), included);
-          final Path destPath = Paths.get(destination, targetPath, included);
+          final Path sourcePath = Paths.get(resource.getDirectory()).resolve(included);
+          final Path destPath = Paths.get(destination, targetPath).resolve(included);
           getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));
           // ensure all directories exist because copy operation will fail if they don't
           Files.createDirectories(destPath.getParent());
           Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING,
                      StandardCopyOption.COPY_ATTRIBUTES);
 
-          copiedPaths.add(separatorsToUnix(Paths.get(targetPath, included).toString()));
+          copiedPaths.add(separatorsToUnix(Paths.get(targetPath).resolve(included).toString()));
         }
       }
 
@@ -678,11 +783,19 @@ public class BuildMojo extends AbstractDockerMojo {
     return path.replace(WINDOWS_SEPARATOR, UNIX_SEPARATOR);
   }
 
-  private DockerClient.BuildParameter[] buildParams() {
-    final List<DockerClient.BuildParameter> buildParams = Lists.newArrayList();
+  private DockerClient.BuildParam[] buildParams() 
+    throws UnsupportedEncodingException, JsonProcessingException {
+    final List<DockerClient.BuildParam> buildParams = Lists.newArrayList();
     if (pullOnBuild) {
-      buildParams.add(DockerClient.BuildParameter.PULL_NEWER_IMAGE);
+      buildParams.add(DockerClient.BuildParam.pullNewerImage());
     }
-    return buildParams.toArray(new DockerClient.BuildParameter[buildParams.size()]);
+    if (noCache) {
+      buildParams.add(DockerClient.BuildParam.noCache());
+    }
+    if (!buildArgs.isEmpty()) {
+      buildParams.add(DockerClient.BuildParam.create("buildargs", 
+        URLEncoder.encode(OBJECT_MAPPER.writeValueAsString(buildArgs), "UTF-8")));
+    }
+    return buildParams.toArray(new DockerClient.BuildParam[buildParams.size()]);
   }
 }

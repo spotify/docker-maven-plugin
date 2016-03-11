@@ -1,4 +1,4 @@
-# docker-maven-plugin [![Circle CI](https://circleci.com/gh/spotify/docker-maven-plugin.png?style=badge)](https://circleci.com/gh/spotify/docker-maven-plugin)
+# docker-maven-plugin [![Circle CI](https://circleci.com/gh/spotify/docker-maven-plugin.png?style=badge)](https://circleci.com/gh/spotify/docker-maven-plugin) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.spotify/docker-maven-plugin/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.spotify/docker-maven-plugin/)
 
 
 A Maven plugin for building and pushing Docker images.
@@ -95,6 +95,32 @@ To push the image you just built to the registry, specify the `pushImage` flag.
 
     mvn clean package docker:build -DpushImage
 
+To push only specific tags of the image to the registry, specify the `pushImageTag` flag.
+
+    mvn clean package docker:build -DpushImageTag
+
+In order for this to succeed, at least one imageTag must be present in the config, multiple tags can be used.
+
+    <build>
+      <plugins>
+        ...
+        <plugin>
+          <configuration>
+            ...
+            <imageTags>
+               <imageTag>${project.version}</imageTag>
+               <imageTag>latest</imageTag>
+            </imageTags>
+          </configuration>
+        </plugin>
+        ...
+      </plugins>
+    </build>
+
+Tags-to-be-pushed can also be specified directly on the command line with
+
+    mvn ... docker:build -DpushImageTags -DdockerImageTag=latest -DdockerImageTag=another-tag
+
 By default the plugin will try to connect to docker on localhost:2375. Set the DOCKER_HOST 
 environment variable to connect elsewhere. 
 
@@ -125,7 +151,65 @@ To remove the image named `foobar` run the following command:
 For a complete list of configuration options run:
 `mvn com.spotify:docker-maven-plugin:<version>:help -Ddetail=true`
 
-### Authenticating with Private Registries
+### Using with Private Registries
+
+To push an image to a private registry, Docker requires that the image tag
+being pushed is prefixed with the hostname and port of the registry. For
+example to push `my-image` to `registry.example.com`, the image needs to be
+tagged as `registry.example.com/my-image`.
+
+The simplest way to do this with docker-maven-plugin is to put the registry
+name in the `<imageName>` field, for example
+
+```xml
+<plugin>
+  <groupId>com.spotify</groupId>
+  <artifactId>docker-maven-plugin</artifactId>
+  <configuration>
+    <imageName>registry.example.com/my-image</imageName>
+    ...
+```
+
+Then when pushing the image with either `docker:build -DpushImage` or
+`docker:push`, the docker daemon will push to `registry.example.com`.
+
+Alternatively, if you wish to use a short name in `docker:build` you can use
+`docker:tag -DpushImage` to tag the just-built image with the full registry hostname and push it. It's important to use the `pushImage` flag as using `docker:push` independently will attempt to push the original image. 
+
+For example:
+
+```xml
+<plugin>
+  <groupId>com.spotify</groupId>
+  <artifactId>docker-maven-plugin</artifactId>
+  <configuration>
+    <imageName>my-image</imageName>
+    ...
+  </configuration>
+  <executions>
+    <execution>
+      <id>build-image</id>
+      <phase>package</phase>
+      <goals>
+        <goal>build</goal>
+      </goals>
+    </execution>
+    <execution>
+      <id>tag-image</id>
+      <phase>package</phase>
+      <goals>
+        <goal>tag</goal>
+      </goals>
+      <configuration>
+        <image>my-image</image>
+        <newName>registry.example.com/my-image</newName>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+```
+
+#### Authenticating with Private Registries
 
 To push to a private Docker image registry that requires authentication, you can put your
 credentials in your Maven's global `settings.xml` file as part of the `<servers></servers>` block.

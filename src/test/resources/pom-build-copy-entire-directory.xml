@@ -10,10 +10,6 @@
   <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-
   <build>
     <plugins>
       <plugin>
@@ -21,19 +17,15 @@
         <artifactId>docker-maven-plugin</artifactId>
         <version>0.1-SNAPSHOT</version>
         <configuration>
-          <dockerHost>http://host:2375</dockerHost>
-          <imageName>busybox</imageName>
-          <retryPushTimeout>1</retryPushTimeout>
-          <retryPushCount>3</retryPushCount>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.3</version>
-        <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <baseImage>busybox</baseImage>
+          <imageName>test-copied-directory</imageName>
+          <entryPoint>echo</entryPoint>
+          <resources>
+            <resource>
+              <targetPath>/data</targetPath>
+              <directory>src/test/resources/copy-wholedir-data</directory>
+            </resource>
+          </resources>
         </configuration>
       </plugin>
     </plugins>

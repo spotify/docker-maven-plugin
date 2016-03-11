@@ -23,14 +23,18 @@ package com.spotify.docker;
 
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerException;
 import com.spotify.docker.client.messages.AuthConfig;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 
 import java.io.File;
 
+import static com.googlecode.catchexception.CatchException.verifyException;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class PushMojoTest extends AbstractMojoTestCase {
@@ -45,6 +49,20 @@ public class PushMojoTest extends AbstractMojoTestCase {
     final DockerClient docker = mock(DockerClient.class);
     mojo.execute(docker);
     verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
+  }
+
+  public void testFailingPushWithRetries() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-push.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final PushMojo mojo = (PushMojo) lookupMojo("push", pom);
+    assertNotNull(mojo);
+
+    final DockerClient docker = mock(DockerClient.class);
+    doThrow(new DockerException("Expected")).when(docker).push(any(String.class), any(AnsiProgressHandler.class));
+    verifyException(mojo, DockerException.class).execute(docker);
+    verify(docker, times(4)).push(eq("busybox"), any(AnsiProgressHandler.class));
   }
 
   public void testPushPrivateRepo() throws Exception {
