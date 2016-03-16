@@ -192,7 +192,11 @@ will need to do this binding so the image gets built when maven is run from the 
       </executions>
     </plugin>
 
-You can skip Docker build with `-DskipDockerBuild` and skip Docker tag with `-DskipDockerTag`.
+You can skip Docker goals bound to Maven phases with:
+
+* `-DskipDockerBuild` to skip image build
+* `-DskipDockerTag` to skip image tag
+* `-DskipDockerPush` to skip image push
 
 To remove the image named `foobar` run the following command:
 
