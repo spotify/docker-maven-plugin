@@ -8,6 +8,7 @@ A Maven plugin for building and pushing Docker images.
   * [Specify build info in the POM](#specify-build-info-in-the-pom)
   * [Use a Dockerfile](#use-a-dockerfile)
 * [Usage](#usage)
+  * [Bind Docker commands to Maven phases](#bind-docker-commands-to-maven-phases)
   * [Authenticating with private registries](#authenticating-with-private-registries)
 * [Releasing](#releasing)
 * [Known Issues](#known-issues)
@@ -126,8 +127,10 @@ environment variable to connect elsewhere.
 
     DOCKER_HOST=tcp://<host>:2375
 
-You can also bind the build goal to the package phase, so the container will be built when you run
-just `mvn package`. If you have a multi-module project where a sub-module builds an image, you
+### Bind Docker commands to Maven phases
+
+You can also bind the build, tag & push goals to the Maven phases, so the container will be built, tagged and pushed 
+when you run just `mvn deploy`. If you have a multi-module project where a sub-module builds an image, you
 will need to do this binding so the image gets built when maven is run from the parent project. 
 
     <plugin>
@@ -136,17 +139,41 @@ will need to do this binding so the image gets built when maven is run from the 
       <version>VERSION GOES HERE</version>
       <executions>
         <execution>
+          <id>build-image</id>
           <phase>package</phase>
           <goals>
             <goal>build</goal>
           </goals>
         </execution>
+        <execution>
+          <id>tag-image</id>
+          <phase>package</phase>
+          <goals>
+            <goal>tag</goal>
+          </goals>
+          <configuration>
+            <image>my-image:${project.version}</image>
+            <newName>registry.example.com/my-image:${project.version}</newName>
+          </configuration>
+        </execution>
+        <execution>
+          <id>push-image</id>
+          <phase>deploy</phase>
+          <goals>
+            <goal>push</goal>
+          </goals>
+          <configuration>
+            <imageName>registry.example.com/my-image:${project.version}</imageName>
+          </configuration>
+        </execution>        
       </executions>
     </plugin>
 
+You can skip Docker build with `-DskipDockerBuild` and skip Docker tag with `-DskipDockerTag`.
+
 To remove the image named `foobar` run the following command:
 
-	mvn docker:removeImage -DimageName=foobar
+  mvn docker:removeImage -DimageName=foobar
 
 For a complete list of configuration options run:
 `mvn com.spotify:docker-maven-plugin:<version>:help -Ddetail=true`
