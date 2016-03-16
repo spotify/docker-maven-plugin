@@ -97,6 +97,13 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   @Parameter(property = "retryPushTimeout", defaultValue = "10000")
   private int retryPushTimeout;
 
+  /**
+   * Flag to skip docker goal, making goal a no-op. This can be useful when docker goal
+   * is bound to Maven phase, and you want to skip Docker command. Defaults to false.
+   */
+  @Parameter(property = "skipDocker", defaultValue = "false")
+  private boolean skipDocker;
+
   public int getRetryPushTimeout() {
     return retryPushTimeout;
   }
@@ -105,7 +112,14 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     return retryPushCount;
   };
 
+  @Override
   public void execute() throws MojoExecutionException {
+
+    if (skipDocker) {
+      getLog().info("Skipping docker goal");
+      return;
+    }
+
     DockerClient client = null;
     try {
       final DefaultDockerClient.Builder builder = getBuilder();

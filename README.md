@@ -197,10 +197,11 @@ You can skip Docker goals bound to Maven phases with:
 * `-DskipDockerBuild` to skip image build
 * `-DskipDockerTag` to skip image tag
 * `-DskipDockerPush` to skip image push
+* `-DskipDocker` to skip any Docker goals
 
 To remove the image named `foobar` run the following command:
 
-  mvn docker:removeImage -DimageName=foobar
+    mvn docker:removeImage -DimageName=foobar
 
 For a complete list of configuration options run:
 `mvn com.spotify:docker-maven-plugin:<version>:help -Ddetail=true`
