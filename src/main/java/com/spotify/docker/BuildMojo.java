@@ -271,6 +271,10 @@ public class BuildMojo extends AbstractDockerMojo {
     return forceTags;
   }
 
+  public boolean isSkipDockerBuild() {
+    return skipDockerBuild;
+  }
+
   @Override
   protected void execute(final DockerClient docker)
       throws MojoExecutionException, GitAPIException, IOException, DockerException,
@@ -356,11 +360,12 @@ public class BuildMojo extends AbstractDockerMojo {
 
     // Push specific tags specified in pom rather than all images
     if (pushImageTag) {
-      pushImageTag(docker, imageName, imageTags, getLog());
+      pushImageTag(docker, imageName, imageTags, getLog(), isSkipDockerPush());
     }
 
     if (pushImage) {
-      pushImage(docker, imageName, getLog(), buildInfo, getRetryPushCount(), getRetryPushTimeout());
+      pushImage(docker, imageName, getLog(), buildInfo, getRetryPushCount(), getRetryPushTimeout(),
+          isSkipDockerPush());
     }
 
     // Write image info file
@@ -800,4 +805,6 @@ public class BuildMojo extends AbstractDockerMojo {
     }
     return buildParams.toArray(new DockerClient.BuildParam[buildParams.size()]);
   }
+
+
 }

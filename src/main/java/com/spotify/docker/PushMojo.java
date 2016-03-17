@@ -42,23 +42,12 @@ public class PushMojo extends AbstractDockerMojo {
   @Parameter(property = "imageName", required = true)
   private String imageName;
 
-  /**
-   * Flag to skip docker push, making push goal a no-op. This can be useful when docker:push
-   * is bound to deploy goal, and you want to deploy a jar but not a container. Defaults to false.
-   */
-  @Parameter(property = "skipDockerPush", defaultValue = "false")
-  private boolean skipDockerPush;
-
   @Override
   protected void execute(DockerClient docker)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
 
-    if (skipDockerPush) {
-      getLog().info("Skipping docker push");
-      return;
-    }
-
-    pushImage(docker, imageName, getLog(), null, getRetryPushCount(), getRetryPushTimeout());
+    pushImage(docker, imageName, getLog(), null, getRetryPushCount(), getRetryPushTimeout(),
+        isSkipDockerPush());
   }
 
 }

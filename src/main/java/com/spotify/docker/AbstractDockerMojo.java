@@ -104,6 +104,13 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   @Parameter(property = "skipDocker", defaultValue = "false")
   private boolean skipDocker;
 
+  /**
+   * Flag to skip docker push, making push goal a no-op. This can be useful when docker:push
+   * is bound to deploy goal, and you want to deploy a jar but not a container. Defaults to false.
+   */
+  @Parameter(property = "skipDockerPush", defaultValue = "false")
+  private boolean skipDockerPush;
+
   public int getRetryPushTimeout() {
     return retryPushTimeout;
   }
@@ -111,6 +118,14 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   public int getRetryPushCount() {
     return retryPushCount;
   };
+
+  public boolean isSkipDocker() {
+    return skipDocker;
+  }
+
+  public boolean isSkipDockerPush() {
+    return skipDockerPush;
+  }
 
   @Override
   public void execute() throws MojoExecutionException {
@@ -120,38 +135,38 @@ abstract class AbstractDockerMojo extends AbstractMojo {
       return;
     }
 
-    DockerClient client = null;
-    try {
-      final DefaultDockerClient.Builder builder = getBuilder();
-
-      final String dockerHost = rawDockerHost();
-      if (!isNullOrEmpty(dockerHost)) {
-        builder.uri(dockerHost);
-      }
-      final Optional<DockerCertificates> certs = dockerCertificates();
-      if (certs.isPresent()) {
-        builder.dockerCertificates(certs.get());
-      }
-
-      final AuthConfig authConfig = authConfig();
-      if (authConfig != null) {
-        builder.authConfig(authConfig);
-      }
-
-      client = builder.build();
+    try (DockerClient client = buildDockerClient()) {
       execute(client);
     } catch (Exception e) {
       throw new MojoExecutionException("Exception caught", e);
-    } finally {
-      if (client != null) {
-        client.close();
-      }
     }
   }
 
   protected DefaultDockerClient.Builder getBuilder() throws DockerCertificateException {
     return DefaultDockerClient.fromEnv()
       .readTimeoutMillis(0);
+  }
+
+  protected DockerClient buildDockerClient()
+      throws DockerCertificateException, SecDispatcherException, MojoExecutionException {
+
+    final DefaultDockerClient.Builder builder = getBuilder();
+
+    final String dockerHost = rawDockerHost();
+    if (!isNullOrEmpty(dockerHost)) {
+      builder.uri(dockerHost);
+    }
+    final Optional<DockerCertificates> certs = dockerCertificates();
+    if (certs.isPresent()) {
+      builder.dockerCertificates(certs.get());
+    }
+
+    final AuthConfig authConfig = authConfig();
+    if (authConfig != null) {
+      builder.authConfig(authConfig);
+    }
+
+    return builder.build();
   }
 
   protected abstract void execute(final DockerClient dockerClient) throws Exception;

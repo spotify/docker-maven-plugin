@@ -17,16 +17,10 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <version>0.1-SNAPSHOT</version>
                 <configuration>
-                    <!-- we have to supply values for all params because unit testing framework -->
-                    <!-- doesn't set default values even though the are set in mojo-->
                     <dockerHost>http://host:2375</dockerHost>
                     <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
                     <imageName>busybox</imageName>
-                    <imageTags>
-                        <imageTag>latest</imageTag>
-                    </imageTags>
-                    <!-- test image tag is pushed -->
-                    <pushImageTag>true</pushImageTag>
+                    <skipDockerBuild>true</skipDockerBuild>
                 </configuration>
             </plugin>
         </plugins>
