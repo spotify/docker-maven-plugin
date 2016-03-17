@@ -87,6 +87,10 @@ public class TagMojo extends AbstractDockerMojo {
   @Parameter(property = "useGitCommitId", defaultValue = "false")
   private boolean useGitCommitId;
 
+  public boolean isSkipDockerTag() {
+    return skipDockerTag;
+  }
+
   @Override
   protected void execute(DockerClient docker)
       throws MojoExecutionException, DockerException,
