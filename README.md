@@ -26,6 +26,13 @@ image directly in the pom, without needing a separate `Dockerfile`.
 If you need `VOLUME` command(or any other not supported dockerfile command), then you will need
 to create a `Dockerfile` and use the `dockerDirectory` element.
 
+By default the plugin will try to connect to docker on localhost:2375. Set the DOCKER_HOST 
+environment variable to connect elsewhere.
+
+    DOCKER_HOST=tcp://<host>:2375
+
+Other docker-standard environment variables are honored too such as TLS and certificates.
+
 ### Specify build info in the POM
 
 This example creates a new image named `example`, copies the project's jar file into the image,
@@ -140,11 +147,6 @@ Optionally, you can force docker to overwrite your image tags on each new build:
 Tags-to-be-pushed can also be specified directly on the command line with
 
     mvn ... docker:build -DpushImageTags -DdockerImageTag=latest -DdockerImageTag=another-tag
-
-By default the plugin will try to connect to docker on localhost:2375. Set the DOCKER_HOST 
-environment variable to connect elsewhere. 
-
-    DOCKER_HOST=tcp://<host>:2375
 
 ### Bind Docker commands to Maven phases
 
