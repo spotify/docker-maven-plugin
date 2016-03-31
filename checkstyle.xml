@@ -10,6 +10,10 @@ page at http://checkstyle.sourceforge.net/config.html -->
 
 <module name="Checker">
 
+  <module name="SuppressionFilter">
+    <property name="file" value="checkstyle-suppressions.xml"/>
+  </module>
+
   <module name="Header">
     <property name="headerFile" value="java.header"/>
     <property name="ignoreLines" value="2, 3"/>
@@ -141,6 +145,11 @@ page at http://checkstyle.sourceforge.net/config.html -->
       <property name="severity" value="warning"/>
     </module>
 
+    <module name="FinalLocalVariable">
+      <!-- Checks that local variables that never have their values changed are declared final. -->
+      <property name="tokens" value="VARIABLE_DEF"/>
+      <property name="validateEnhancedForLoopVariable" value="true"/>
+    </module>
 
     <!--
 

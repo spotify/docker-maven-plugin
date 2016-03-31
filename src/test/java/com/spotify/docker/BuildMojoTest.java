@@ -209,9 +209,10 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     final DockerClient docker = mock(DockerClient.class);
 
     mojo.execute(docker);
-    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
-                         any(AnsiProgressHandler.class), 
-                         eq(DockerClient.BuildParam.create("buildargs", "%7B%22VERSION%22%3A%220.1%22%7D")));
+    verify(docker).build(
+        eq(Paths.get("target/docker")), eq("busybox"),
+        any(AnsiProgressHandler.class),
+        eq(DockerClient.BuildParam.create("buildargs", "%7B%22VERSION%22%3A%220.1%22%7D")));
     assertFilesCopied();
   }
   
@@ -358,7 +359,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     } catch (MojoExecutionException e) {
       final String message = "You have used option \"pushImageTag\" but have"
                               + " not specified an \"imageTag\" in your"
-                              + " docker-maven-client's plugin configuration" ;
+                              + " docker-maven-client's plugin configuration";
       assertTrue(String.format("Exception message should have contained '%s'", message),
                  e.getMessage().contains(message));
     }
@@ -381,7 +382,8 @@ public class BuildMojoTest extends AbstractMojoTestCase {
   }
 
   public void testBuildWithGeneratedDockerfileWithSquashCommands() throws Exception {
-      final File pom = getTestFile("src/test/resources/pom-build-generated-dockerfile-with-squash-commands.xml");
+      final File pom = getTestFile(
+          "src/test/resources/pom-build-generated-dockerfile-with-squash-commands.xml");
       assertNotNull("Null pom.xml", pom);
       assertTrue("pom.xml does not exist", pom.exists());
 
@@ -406,7 +408,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     verify(docker).build(eq(Paths.get("target/docker")), eq("test-copied-directory"),
         any(AnsiProgressHandler.class));
 
-    List<String> expectedDockerFileContents = ImmutableList.of(
+    final List<String> expectedDockerFileContents = ImmutableList.of(
         "FROM busybox",
         "ADD /data /data",
         "ENTRYPOINT echo"

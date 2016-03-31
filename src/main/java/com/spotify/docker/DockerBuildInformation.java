@@ -69,7 +69,7 @@ public class DockerBuildInformation {
 
   private void updateGitInformation(Log log) {
     try {
-      Repository repo = new Git().getRepo();
+      final Repository repo = new Git().getRepo();
       if (repo != null) {
         this.repo   = repo.getConfig().getString("remote", "origin", "url");
         final ObjectId head = repo.resolve("HEAD");

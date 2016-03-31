@@ -467,7 +467,7 @@ public class BuildMojo extends AbstractDockerMojo {
     if (env == null) {
       env = Maps.newHashMap();
     }
-    for (Map.Entry<String, ConfigValue> entry : envConfig.root().entrySet()) {
+    for (final Map.Entry<String, ConfigValue> entry : envConfig.root().entrySet()) {
       final String key = expand(entry.getKey());
       if (!env.containsKey(key)) {
         env.put(key, expand(entry.getValue().unwrapped().toString()));
@@ -587,7 +587,7 @@ public class BuildMojo extends AbstractDockerMojo {
 
     if (env != null) {
       final List<String> sortedKeys = Ordering.natural().sortedCopy(env.keySet());
-      for (String key : sortedKeys) {
+      for (final String key : sortedKeys) {
         final String value = env.get(key);
         commands.add(String.format("ENV %s %s", key, value));
       }
@@ -597,7 +597,7 @@ public class BuildMojo extends AbstractDockerMojo {
       commands.add("WORKDIR " + workdir);
     }
 
-    for (String file : filesToAdd) {
+    for (final String file : filesToAdd) {
       commands.add(String.format("ADD %s %s", file, normalizeDest(file)));
     }
 
@@ -635,7 +635,7 @@ public class BuildMojo extends AbstractDockerMojo {
           final List<String> args = ImmutableList.copyOf(
               Splitter.on(WHITESPACE).omitEmptyStrings().split(cmd));
           final StringBuilder cmdBuilder = new StringBuilder("[");
-          for (String arg : args) {
+          for (final String arg : args) {
             cmdBuilder.append('"').append(arg).append('"');
           }
           cmdBuilder.append(']');
@@ -653,14 +653,14 @@ public class BuildMojo extends AbstractDockerMojo {
 
     // Add VOLUME's to dockerfile
     if (volumes != null) {
-      for (String volume : volumes) {
+      for (final String volume : volumes) {
         commands.add("VOLUME " + volume);
       }
     }
 
     // Add LABEL's to dockerfile
     if (labels != null) {
-      for (String label : labels) {
+      for (final String label : labels) {
         commands.add("LABEL " + label);
       }
     }
@@ -708,7 +708,7 @@ public class BuildMojo extends AbstractDockerMojo {
 
     final List<String> allCopiedPaths = newArrayList();
 
-    for (Resource resource : resources) {
+    for (final Resource resource : resources) {
       final File source = new File(resource.getDirectory());
       final List<String> includes = resource.getIncludes();
       final List<String> excludes = resource.getExcludes();
@@ -729,7 +729,7 @@ public class BuildMojo extends AbstractDockerMojo {
 
       final List<String> copiedPaths = newArrayList();
 
-      boolean copyWholeDir = includes.isEmpty() && excludes.isEmpty() &&
+      final boolean copyWholeDir = includes.isEmpty() && excludes.isEmpty() &&
                              resource.getTargetPath() != null;
 
       // file location relative to docker directory, used later to generate Dockerfile
@@ -743,7 +743,7 @@ public class BuildMojo extends AbstractDockerMojo {
         FileUtils.copyDirectoryStructure(source, destPath.toFile());
         copiedPaths.add(separatorsToUnix(targetPath));
       } else {
-        for (String included : includedFiles) {
+        for (final String included : includedFiles) {
           final Path sourcePath = Paths.get(resource.getDirectory()).resolve(included);
           final Path destPath = Paths.get(destination, targetPath).resolve(included);
           getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));

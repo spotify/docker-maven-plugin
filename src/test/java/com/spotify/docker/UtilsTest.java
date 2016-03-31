@@ -47,44 +47,44 @@ public class UtilsTest {
 
   @Test
   public void testParseImageName() throws MojoExecutionException {
-    String[] result = Utils.parseImageName(IMAGE);
+    final String[] result = Utils.parseImageName(IMAGE);
     assertThat(result).containsExactly(IMAGE, null);
   }
 
   @Test
   public void testParseImageNameWithSeperator() throws MojoExecutionException {
-    String[] result = Utils.parseImageName(IMAGE_WITH_SEPERATOR);
+    final String[] result = Utils.parseImageName(IMAGE_WITH_SEPERATOR);
     assertThat(result).containsExactly(IMAGE, null);
   }
 
   @Test
   public void testParseImageNameWithTag() throws MojoExecutionException {
-    String[] result = Utils.parseImageName(IMAGE_WITH_TAG);
+    final String[] result = Utils.parseImageName(IMAGE_WITH_TAG);
     assertThat(result).containsExactly(IMAGE, TAG);
   }
 
   @Test
   public void testParseImageNameWithLibrary() throws MojoExecutionException {
-    String[] result = Utils.parseImageName(IMAGE_WITH_LIBRARY);
+    final String[] result = Utils.parseImageName(IMAGE_WITH_LIBRARY);
     assertThat(result).containsExactly(IMAGE_WITH_LIBRARY, null);
   }
 
   @Test
   public void testParseImageNameWithLibraryAndTag() throws MojoExecutionException {
-    String[] result = Utils.parseImageName(IMAGE_FROM_LIB_WITH_TAG);
+    final String[] result = Utils.parseImageName(IMAGE_FROM_LIB_WITH_TAG);
     assertThat(result).containsExactly(IMAGE_WITH_LIBRARY, TAG);
   }
 
   @Test
   public void testParseImageNameFromRegistryAndTag() throws MojoExecutionException {
-    String[] result = Utils.parseImageName(IMAGE_FROM_REG_WITH_TAG);
+    final String[] result = Utils.parseImageName(IMAGE_FROM_REG_WITH_TAG);
     assertThat(result).containsExactly(IMAGE_FROM_REGISTRY, TAG);
   }
 
   @Test
   public void testPushImage() throws Exception {
-    DockerClient dockerClient = mock(DockerClient.class);
-    Log log = mock(Log.class);
+    final DockerClient dockerClient = mock(DockerClient.class);
+    final Log log = mock(Log.class);
     final DockerBuildInformation buildInfo = mock(DockerBuildInformation.class);
     Utils.pushImage(dockerClient, IMAGE, log, buildInfo, 0, 1);
 

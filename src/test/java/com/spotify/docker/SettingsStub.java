@@ -29,13 +29,13 @@ public class SettingsStub extends Settings {
 
     public SettingsStub() {
         super();
-        Server server = new Server();
+        final Server server = new Server();
         server.setId("docker-hub");
         server.setUsername("dxia3");
         // plaintext value is: SxpxdUQA2mvX7oj
         server.setPassword("{gc4QPLrlgPwHZjAhPw8JPuGzaPitzuyjeBojwCz88j4=}");
-        Xpp3Dom configuration = new Xpp3Dom("configuration");
-        Xpp3Dom email = new Xpp3Dom("email");
+        final Xpp3Dom configuration = new Xpp3Dom("configuration");
+        final Xpp3Dom email = new Xpp3Dom("email");
         email.setValue("dxia+3@spotify.com");
         configuration.addChild(email);
         server.setConfiguration(configuration);
