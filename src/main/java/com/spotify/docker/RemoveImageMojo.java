@@ -64,13 +64,13 @@ public class RemoveImageMojo extends AbstractDockerMojo {
     }
 
     for (final String imageTag : imageTags) {
-      String currImageName = imageNameWithoutTag +
+      final String currImageName = imageNameWithoutTag +
                              ((isNullOrEmpty(imageTag)) ? "" : (":" + imageTag));
       getLog().info("Removing -f " + currImageName);
 
       try {
         // force the image to be removed but don't remove untagged parents
-        for (RemovedImage removedImage : docker.removeImage(currImageName, true, false)) {
+        for (final RemovedImage removedImage : docker.removeImage(currImageName, true, false)) {
           getLog().info("Removed: " + removedImage.imageId());
         }
       } catch (ImageNotFoundException | NotFoundException e) {

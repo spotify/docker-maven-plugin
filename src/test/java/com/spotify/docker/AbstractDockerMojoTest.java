@@ -103,7 +103,7 @@ public class AbstractDockerMojoTest {
   public void testSettingsNoUsername() throws Exception {
     ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
 
-    Server server = mockServer();
+    final Server server = mockServer();
 
     server.setUsername(null);
 
@@ -125,7 +125,7 @@ public class AbstractDockerMojoTest {
   public void testSettingsNoPassword() throws Exception {
     ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
 
-    Server server = mockServer();
+    final Server server = mockServer();
 
     server.setPassword(null);
 
@@ -148,7 +148,7 @@ public class AbstractDockerMojoTest {
   public void testSettingsNoConfiguration() throws Exception {
     ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
 
-    Server server = mockServer();
+    final Server server = mockServer();
 
     server.setConfiguration(null);
 
@@ -171,7 +171,7 @@ public class AbstractDockerMojoTest {
   public void testSettingsNoEmail() throws Exception {
     ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
 
-    Server server = mockServer();
+    final Server server = mockServer();
 
     server.setConfiguration(new Xpp3Dom(CONFIGURATION_PROPERTY));
 
@@ -198,7 +198,7 @@ public class AbstractDockerMojoTest {
 
     sut.execute();
 
-    AuthConfig authConfig = authConfigCaptor.getValue();
+    final AuthConfig authConfig = authConfigCaptor.getValue();
     assertThat(authConfig).isNotNull();
     assertThat(authConfig.email()).isEqualTo(EMAIL);
     assertThat(authConfig.password()).isEqualTo(PASSWORD);
@@ -216,20 +216,20 @@ public class AbstractDockerMojoTest {
 
     sut.execute();
 
-    AuthConfig authConfig = authConfigCaptor.getValue();
+    final AuthConfig authConfig = authConfigCaptor.getValue();
     assertThat(authConfig).isNotNull();
     assertThat(authConfig.serverAddress()).isEqualTo(REGISTRY_URL);
   }
 
   private Server mockServer() {
-    Server server = new Server();
+    final Server server = new Server();
     server.setUsername(USERNAME);
     server.setPassword(PASSWORD);
 
-    Xpp3Dom email = new Xpp3Dom(EMAIL_PROPERTY);
+    final Xpp3Dom email = new Xpp3Dom(EMAIL_PROPERTY);
     email.setValue(EMAIL);
 
-    Xpp3Dom configuration = new Xpp3Dom(CONFIGURATION_PROPERTY);
+    final Xpp3Dom configuration = new Xpp3Dom(CONFIGURATION_PROPERTY);
     configuration.addChild(email);
 
     server.setConfiguration(configuration);

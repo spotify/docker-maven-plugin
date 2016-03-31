@@ -60,7 +60,8 @@ public class PushMojoTest extends AbstractMojoTestCase {
     assertNotNull(mojo);
 
     final DockerClient docker = mock(DockerClient.class);
-    doThrow(new DockerException("Expected")).when(docker).push(any(String.class), any(AnsiProgressHandler.class));
+    doThrow(new DockerException("Expected")).when(docker).push(any(String.class),
+                                                               any(AnsiProgressHandler.class));
     verifyException(mojo, DockerException.class).execute(docker);
     verify(docker, times(4)).push(eq("busybox"), any(AnsiProgressHandler.class));
   }

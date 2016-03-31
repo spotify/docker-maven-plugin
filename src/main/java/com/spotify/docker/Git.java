@@ -82,7 +82,7 @@ public class Git {
       final org.eclipse.jgit.api.Git git = new org.eclipse.jgit.api.Git(repo);
 
       // append first git tag we find
-      for (Ref gitTag : git.tagList().call()) {
+      for (final Ref gitTag : git.tagList().call()) {
         if (gitTag.getObjectId().equals(head)) {
           // name is refs/tag/name, so get substring after last slash
           final String name = gitTag.getName();

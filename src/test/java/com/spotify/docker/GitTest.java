@@ -50,7 +50,7 @@ public class GitTest {
     MockitoAnnotations.initMocks(this);
   }
 
-  @Test(expected=MojoExecutionException.class)
+  @Test(expected = MojoExecutionException.class)
   public void testGetCommitIdInNonGitDirThrows()
       throws IOException, DockerException, GitAPIException, MojoExecutionException {
     final Git git = new Git();
