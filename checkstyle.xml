@@ -141,6 +141,11 @@ page at http://checkstyle.sourceforge.net/config.html -->
       <property name="severity" value="warning"/>
     </module>
 
+    <module name="FinalLocalVariable">
+      <!-- Checks that local variables that never have their values changed are declared final. -->
+      <property name="tokens" value="VARIABLE_DEF"/>
+      <property name="validateEnhancedForLoopVariable" value="true"/>
+    </module>
 
     <!--
 
