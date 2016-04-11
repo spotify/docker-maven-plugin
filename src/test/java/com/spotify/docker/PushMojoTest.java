@@ -66,6 +66,20 @@ public class PushMojoTest extends AbstractMojoTestCase {
     verify(docker, times(4)).push(eq("busybox"), any(AnsiProgressHandler.class));
   }
 
+  public void testPushTags() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-push-tags.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final PushMojo mojo = (PushMojo) lookupMojo("push", pom);
+    assertNotNull(mojo);
+    final DockerClient docker = mock(DockerClient.class);
+    mojo.execute(docker);
+    verify(docker).push(eq("busybox:snapshot"), any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:0.0.1-SNAPSHOT"), any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
+  }
+
   public void testPushPrivateRepo() throws Exception {
     final File pom = getTestFile("src/test/resources/pom-push-private-repo.xml");
     assertNotNull("Null pom.xml", pom);
