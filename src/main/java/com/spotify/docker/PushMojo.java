@@ -53,7 +53,7 @@ public class PushMojo extends AbstractDockerMojo {
   protected void execute(DockerClient docker)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
     // Push specific tags specified in pom rather than all images
-    if (imageTags != null) {
+    if (imageTags != null && !imageTags.isEmpty()) {
       final String imageNameWithoutTag = parseImageName(imageName)[0];
       pushImageTag(docker, imageNameWithoutTag, imageTags, getLog());
     }
