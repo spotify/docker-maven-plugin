@@ -23,6 +23,7 @@ package com.spotify.docker;
 
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificateException;
+import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.AuthConfig;
 import org.apache.maven.execution.MavenSession;
@@ -41,11 +42,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.any;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AbstractDockerMojoTest {
 
   private static final String DOCKER_HOST = "testhost";
+  private static final String DOCKER_CERT_PATH = "src/test/resources/certs";
   private static final String SERVER_ID = "testId";
   private static final String REGISTRY_URL = "https://my.docker.reg";
   private static final String USERNAME = "username";
@@ -93,10 +96,13 @@ public class AbstractDockerMojoTest {
   @Test
   public void testDockerHostSet() throws Exception {
     ReflectionTestUtils.setField(sut, "dockerHost", DOCKER_HOST);
+    ReflectionTestUtils.setField(sut, "dockerCertPath", DOCKER_CERT_PATH);
 
     sut.execute();
 
     verify(builder).uri(DOCKER_HOST);
+    verify(builder).dockerCertificates(any(DockerCertificates.class));
+ 
   }
 
   @Test

@@ -21,8 +21,10 @@
 
 package com.spotify.docker;
 
+import com.google.common.base.Optional;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificateException;
+import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.AuthConfig;
 
@@ -40,6 +42,8 @@ import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.spotify.docker.client.DefaultDockerClient.NO_TIMEOUT;
+
+import java.nio.file.Paths;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
@@ -67,7 +71,10 @@ abstract class AbstractDockerMojo extends AbstractMojo {
    */
   @Parameter(property = "dockerHost")
   private String dockerHost;
-
+  
+  @Parameter(property = "dockerCertPath")
+  private String dockerCertPath;
+  
   @Parameter(property = "serverId")
   private String serverId;
 
@@ -103,6 +110,10 @@ abstract class AbstractDockerMojo extends AbstractMojo {
       if (!isNullOrEmpty(dockerHost)) {
         builder.uri(dockerHost);
       }
+      final Optional<DockerCertificates> certs = dockerCertificates();
+      if (certs.isPresent()) {
+        builder.dockerCertificates(certs.get());
+      }
 
       final AuthConfig authConfig = authConfig();
       if (authConfig != null) {
@@ -131,6 +142,16 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     return dockerHost;
   }
 
+  protected Optional<DockerCertificates> dockerCertificates() throws DockerCertificateException {
+    if (!isNullOrEmpty(dockerCertPath)) {
+      return DockerCertificates.builder()
+        .dockerCertPath(Paths.get(dockerCertPath)).build();
+    }
+    else {
+      return Optional.absent();
+    }
+  }
+  
   /**
    * Get the email from the server configuration in <code>~/.m2/settings.xml</code>.
    *
