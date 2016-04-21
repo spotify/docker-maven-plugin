@@ -22,7 +22,7 @@
 package com.spotify.docker;
 
 import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerCertificateException;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.AuthConfig;

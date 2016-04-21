@@ -22,8 +22,8 @@
 package com.spotify.docker;
 
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.DockerException;
-import com.spotify.docker.client.ImageNotFoundException;
+import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.exceptions.ImageNotFoundException;
 import com.spotify.docker.client.messages.RemovedImage;
 import com.spotify.docker.client.shaded.javax.ws.rs.NotFoundException;
 
