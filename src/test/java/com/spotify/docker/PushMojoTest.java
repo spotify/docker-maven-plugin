@@ -23,7 +23,7 @@ package com.spotify.docker;
 
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.AuthConfig;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 

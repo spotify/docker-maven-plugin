@@ -22,8 +22,8 @@
 package com.spotify.docker;
 
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.DockerException;
-import com.spotify.docker.client.ImageNotFoundException;
+import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.exceptions.ImageNotFoundException;
 import com.spotify.docker.client.messages.RemovedImage;
 
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
