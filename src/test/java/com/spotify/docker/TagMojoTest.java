@@ -75,7 +75,8 @@ public class TagMojoTest extends AbstractMojoTestCase {
   }
 
   public void testTagSkipTag() throws Exception {
-    final TagMojo mojo = (TagMojo) lookupMojo("tag", getPomAndAssertExists("/pom-tag-skip-tag.xml"));
+    final TagMojo mojo = (TagMojo) lookupMojo("tag",
+        getPomAndAssertExists("/pom-tag-skip-tag.xml"));
     assertThat(mojo).isNotNull();
     assertThat(mojo.isSkipDockerTag()).isTrue();
 
@@ -87,10 +88,11 @@ public class TagMojoTest extends AbstractMojoTestCase {
   }
 
   public void testTagSkipDocker() throws Exception {
-    final TagMojo mojo = (TagMojo) lookupMojo("tag", getPomAndAssertExists("/pom-tag-skip-docker.xml"));
+    final TagMojo mojo = (TagMojo) lookupMojo("tag",
+        getPomAndAssertExists("/pom-tag-skip-docker.xml"));
     assertThat(mojo.isSkipDocker()).isTrue();
 
-    TagMojo mojoSpy = spy(mojo);
+    final TagMojo mojoSpy = spy(mojo);
     mojo.execute();
 
     verify(mojoSpy, never()).execute(any(DockerClient.class));

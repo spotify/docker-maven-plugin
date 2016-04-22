@@ -415,7 +415,8 @@ public class BuildMojoTest extends AbstractMojoTestCase {
   }
 
   public void testBuildWithGeneratedDockerfileWithSquashCommands() throws Exception {
-      final File pom = getPomAndAssertExists("/pom-build-generated-dockerfile-with-squash-commands.xml");
+      final File pom = getPomAndAssertExists(
+          "/pom-build-generated-dockerfile-with-squash-commands.xml");
 
       final BuildMojo mojo = setupMojo(pom);
       final DockerClient docker = mock(DockerClient.class);
@@ -543,7 +544,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     final BuildMojo mojo = setupMojo(getPomAndAssertExists("/pom-build-skip-docker.xml"));
     assertThat(mojo.isSkipDocker()).isTrue();
 
-    BuildMojo mojoSpy = spy(mojo);
+    final BuildMojo mojoSpy = spy(mojo);
     mojo.execute();
     verify(mojoSpy, never()).execute(any(DockerClient.class));
   }

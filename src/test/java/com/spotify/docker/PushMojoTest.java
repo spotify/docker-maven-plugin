@@ -73,16 +73,18 @@ public class PushMojoTest extends AbstractMojoTestCase {
     final DockerClient docker = mock(DockerClient.class);
 
     mojo.execute(docker);
-    verify(docker).push(eq("dxia3/docker-maven-plugin-auth"), any(AnsiProgressHandler.class));
+    verify(docker)
+        .push(eq("dxia3/docker-maven-plugin-auth"), any(AnsiProgressHandler.class));
   }
 
   public void testPushSkipPush() throws Exception {
 
-    final PushMojo mojo = (PushMojo) lookupMojo("push", getPomAndAssertExists("/pom-push-skip-push.xml"));
+    final PushMojo mojo = (PushMojo) lookupMojo("push",
+        getPomAndAssertExists("/pom-push-skip-push.xml"));
     assertThat(mojo).isNotNull();
     assertThat(mojo.isSkipDockerPush()).isTrue();
 
-    final DockerClient docker = mock(DockerClient.class);
+   final DockerClient docker = mock(DockerClient.class);
     mojo.execute(docker);
 
     verify(docker, never())
@@ -90,11 +92,12 @@ public class PushMojoTest extends AbstractMojoTestCase {
   }
 
   public void testPushSkipDocker() throws Exception {
-    final PushMojo mojo = (PushMojo) lookupMojo("push", getPomAndAssertExists("/pom-push-skip-docker.xml"));
+    final PushMojo mojo = (PushMojo) lookupMojo("push",
+        getPomAndAssertExists("/pom-push-skip-docker.xml"));
     assertThat(mojo).isNotNull();
     assertThat(mojo.isSkipDocker()).isTrue();
 
-    PushMojo mojoSpy = spy(mojo);
+    final PushMojo mojoSpy = spy(mojo);
     mojo.execute();
 
     verify(mojoSpy, never()).execute(any(DockerClient.class));
