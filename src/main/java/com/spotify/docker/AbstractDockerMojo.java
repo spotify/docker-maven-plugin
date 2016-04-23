@@ -23,11 +23,10 @@ package com.spotify.docker;
 
 import com.google.common.base.Optional;
 import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.messages.AuthConfig;
-
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
@@ -40,10 +39,11 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
+import java.io.IOException;
+import java.nio.file.Paths;
+
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.spotify.docker.client.DefaultDockerClient.NO_TIMEOUT;
-
-import java.nio.file.Paths;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
@@ -80,6 +80,9 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
   @Parameter(property = "registryUrl")
   private String registryUrl;
+
+  @Parameter(property = "useConfigFile")
+  private String useConfigFile;
 
   /**
    * Number of retries for failing pushes, defaults to 5.
@@ -146,8 +149,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     if (!isNullOrEmpty(dockerCertPath)) {
       return DockerCertificates.builder()
         .dockerCertPath(Paths.get(dockerCertPath)).build();
-    }
-    else {
+    } else {
       return Optional.absent();
     }
   }
@@ -243,6 +245,23 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         }
 
         return authConfigBuilder.build();
+      } else if (!isNullOrEmpty(useConfigFile) && Boolean.TRUE.toString().equals(useConfigFile)){
+
+          final AuthConfig.Builder authConfigBuilder;
+          try {
+            if (!isNullOrEmpty(registryUrl)) {
+              authConfigBuilder = AuthConfig.fromDockerConfig(registryUrl);
+            } else {
+              authConfigBuilder = AuthConfig.fromDockerConfig();
+            }
+          } catch (IOException ex){
+            throw new MojoExecutionException(
+                      "Docker config file could not be read",
+                      ex
+            );
+          }
+
+          return authConfigBuilder.build();
       }
     }
     return null;
