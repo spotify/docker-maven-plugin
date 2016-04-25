@@ -82,7 +82,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   private String registryUrl;
 
   @Parameter(property = "useConfigFile")
-  private String useConfigFile;
+  private Boolean useConfigFile;
 
   /**
    * Number of retries for failing pushes, defaults to 5.
@@ -245,7 +245,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         }
 
         return authConfigBuilder.build();
-      } else if (!isNullOrEmpty(useConfigFile) && Boolean.TRUE.toString().equals(useConfigFile)){
+      } else if (useConfigFile != null && useConfigFile){
 
           final AuthConfig.Builder authConfigBuilder;
           try {
