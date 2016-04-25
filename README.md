@@ -305,6 +305,26 @@ Only passwords enclosed in curly braces will be considered as encrypted.
       </server>
     </servers>
 
+#### Using docker config file for authentication
+
+Another option to authenticate with private repositories is using dockers ~/.docker/config.json.
+This makes it also possible to use in cooperation with cloud providers like AWS or Google Cloud which store the user's
+credentials in this file, too.
+
+    <plugin>
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>VERSION GOES HERE</version>
+        <configuration>
+          [...]
+          <useConfigFile>true</useConfigFile>
+        </configuration>
+      </plugin>
+    </plugins>
+
+**Hint:** The build will fail, if the config file doesn't exist.
+
 ## Testing
 
 Make sure Docker daemon is running and that you can do `docker ps`. Then run `mvn clean test`.
