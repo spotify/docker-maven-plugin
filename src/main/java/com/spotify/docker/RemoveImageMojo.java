@@ -60,7 +60,7 @@ public class RemoveImageMojo extends AbstractDockerMojo {
   protected void execute(final DockerClient docker)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
     final String[] imageNameParts = parseImageName(imageName);
-    if (imageTags == null) {
+    if (imageTags == null || imageTags.isEmpty()) {
       imageTags = Collections.singletonList(imageNameParts[1]);
     }
 
