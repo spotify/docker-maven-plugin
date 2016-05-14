@@ -65,10 +65,10 @@ public class RemoveImageMojo extends AbstractDockerMojo {
       imageTags = new ArrayList<>(1);
     } else if (imageTags.size() == 1 && imageTags.get(0).equals("*")) {
         // removal of all tags requested, loop over all images to find tags
-        for (Image currImage : docker.listImages()) {
+        for (final Image currImage : docker.listImages()) {
             getLog().debug("Found image: " + currImage.toString());
             String[] parsedRepoTag;
-            for (String repoTag : currImage.repoTags()) {
+            for (final String repoTag : currImage.repoTags()) {
                 parsedRepoTag = parseImageName(repoTag);
                 // if repo name matches imageName then save the tag for deletion
                 if (parsedRepoTag[0].equals(imageNameParts)) {
