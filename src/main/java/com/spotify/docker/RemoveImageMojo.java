@@ -57,12 +57,19 @@ public class RemoveImageMojo extends AbstractDockerMojo {
   @Parameter(property = "dockerImageTags")
   private List<String> imageTags;
 
+  /**
+   * Additional tags to tag the image with.
+   */
+  @Parameter(property = "removeAllTags", defaultValue = "false")
+  private boolean removeAllTags;
+
   protected void execute(final DockerClient docker)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
     final String imageNameWithoutTag = parseImageName(imageName)[0];
     if (imageTags == null) {
       imageTags = Collections.singletonList("");
-    } else if (imageTags.size() == 1 && imageTags.get(0).equals("*")) {
+    } else if (removeAllTags) {
+        getLog().info("Removal of all tags requested, searching for tags");
         // removal of all tags requested, loop over all images to find tags
         for (final Image currImage : docker.listImages()) {
             getLog().debug("Found image: " + currImage.toString());
@@ -76,8 +83,6 @@ public class RemoveImageMojo extends AbstractDockerMojo {
                 }
             }
         }
-        // '*' isn't a valid tag name so remove it from the list
-        imageTags.remove("*");
     }
 
     for (final String imageTag : imageTags) {

@@ -29,9 +29,7 @@
             <configuration>
               <imageName>extra-tags</imageName>
               <baseImage>java</baseImage>
-              <imageTags>
-                <tag>*</tag>
-              </imageTags>
+              <removeAllTags>true</removeAllTags>
             </configuration>
           </execution>
         </executions>
