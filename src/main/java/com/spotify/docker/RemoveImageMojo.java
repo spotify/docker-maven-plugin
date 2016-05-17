@@ -28,6 +28,7 @@ import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.RemovedImage;
 import com.spotify.docker.client.shaded.javax.ws.rs.NotFoundException;
 
+import java.util.Collections;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -57,13 +58,20 @@ public class RemoveImageMojo extends AbstractDockerMojo {
   @Parameter(property = "dockerImageTags")
   private List<String> imageTags;
 
+  /**
+   * Additional tags to tag the image with.
+   */
+  @Parameter(property = "removeAllTags", defaultValue = "false")
+  private boolean removeAllTags;
+
   @Override
   protected void execute(final DockerClient docker)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
     final String[] imageNameParts = parseImageName(imageName);
     if (imageTags == null) {
-      imageTags = new ArrayList<>(1);
-    } else if (imageTags.size() == 1 && imageTags.get(0).equals("*")) {
+      imageTags = Collections.singletonList("");
+    } else if (removeAllTags) {
+        getLog().info("Removal of all tags requested, searching for tags");
         // removal of all tags requested, loop over all images to find tags
         for (final Image currImage : docker.listImages()) {
             getLog().debug("Found image: " + currImage.toString());
@@ -77,8 +85,6 @@ public class RemoveImageMojo extends AbstractDockerMojo {
                 }
             }
         }
-        // '*' isn't a valid tag name so remove it from the list
-        imageTags.remove("*");
     }
     imageTags.add(imageNameParts[1]);
 
