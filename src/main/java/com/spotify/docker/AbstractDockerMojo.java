@@ -278,6 +278,8 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     } catch (IOException e) {
       getLog()
           .warn("IOException while reading authentication configuration from .docker directory", e);
+    } catch (Exception e) {
+      getLog().debug("Ignoring Exception from AuthConfig.fromDockerConfig()", e);
     }
     return null;
   }
