@@ -21,12 +21,14 @@
 
 package com.spotify.docker;
 
-import com.google.common.base.Optional;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.messages.AuthConfig;
+
+import com.google.common.base.Optional;
+
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
@@ -43,7 +45,6 @@ import java.io.IOException;
 import java.nio.file.Paths;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.spotify.docker.client.DefaultDockerClient.NO_TIMEOUT;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
@@ -71,10 +72,10 @@ abstract class AbstractDockerMojo extends AbstractMojo {
    */
   @Parameter(property = "dockerHost")
   private String dockerHost;
-  
+
   @Parameter(property = "dockerCertPath")
   private String dockerCertPath;
-  
+
   @Parameter(property = "serverId")
   private String serverId;
 
@@ -136,7 +137,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
   protected DefaultDockerClient.Builder getBuilder() throws DockerCertificateException {
     return DefaultDockerClient.fromEnv()
-      .readTimeoutMillis(NO_TIMEOUT);
+      .readTimeoutMillis(0);
   }
 
   protected abstract void execute(final DockerClient dockerClient) throws Exception;
@@ -153,7 +154,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
       return Optional.absent();
     }
   }
-  
+
   /**
    * Get the email from the server configuration in <code>~/.m2/settings.xml</code>.
    *
