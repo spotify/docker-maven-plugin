@@ -33,7 +33,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -52,7 +52,7 @@ public class RemoveImageMojo extends AbstractDockerMojo {
   private String imageName;
 
   /**
-   * Additional tags to tag the image with.
+   * Additional tags to remove.
    */
   @Parameter(property = "dockerImageTags")
   private List<String> imageTags;
@@ -65,19 +65,20 @@ public class RemoveImageMojo extends AbstractDockerMojo {
 
   protected void execute(final DockerClient docker)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
-    final String imageNameWithoutTag = parseImageName(imageName)[0];
+    final String[] imageNameParts = parseImageName(imageName);
     if (imageTags == null) {
-      imageTags = Collections.singletonList("");
+      imageTags = new ArrayList<>(1);
+      imageTags.add(imageNameParts[1]);
     } else if (removeAllTags) {
-        getLog().info("Removal of all tags requested, searching for tags");
         // removal of all tags requested, loop over all images to find tags
+        getLog().info("Removal of all tags requested, searching for tags");
         for (final Image currImage : docker.listImages()) {
             getLog().debug("Found image: " + currImage.toString());
             String[] parsedRepoTag;
             for (final String repoTag : currImage.repoTags()) {
                 parsedRepoTag = parseImageName(repoTag);
                 // if repo name matches imageName then save the tag for deletion
-                if (parsedRepoTag[0].equals(imageNameWithoutTag)) {
+                if (parsedRepoTag[0].equals(imageNameParts[0])) {
                     imageTags.add(parsedRepoTag[1]);
                     getLog().info("Adding tag for removal: " + parsedRepoTag[1]);
                 }
@@ -86,7 +87,7 @@ public class RemoveImageMojo extends AbstractDockerMojo {
     }
 
     for (final String imageTag : imageTags) {
-      final String currImageName = imageNameWithoutTag +
+      final String currImageName = imageNameParts[0] +
                              ((isNullOrEmpty(imageTag)) ? "" : (":" + imageTag));
       getLog().info("Removing -f " + currImageName);
 
