@@ -16,6 +16,10 @@ branches:
   only:
     - master
 
+before_install:
+  - docker version
+  - docker info
+
 after_success:
   # test coverage reporting
   - bash <(curl -s https://codecov.io/bash)
