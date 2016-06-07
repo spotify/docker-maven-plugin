@@ -6,3 +6,18 @@ jdk:
 cache:
   directories:
   - $HOME/.m2
+
+env:
+  global:
+    - SONATYPE_USERNAME=mattbrownspotify
+    - secure: "WH+C0QLvcp/NFVRngliA0F/aj0caK7/hsc1mapdApM71+Sncem1BScMpkpc3PRql8CRDjI/dDPNnqitcd89P1ros3jpAS9+qnMlzzNebWZ2oUaxIQe8iK89825sBJZhWMtOvl9LXlL6azacZuYOfNpbfCBb3t4Zi09Hi9QMlTKQ="
+
+branches:
+  only:
+    - master
+
+after_success:
+  # test coverage reporting
+  - bash <(curl -s https://codecov.io/bash)
+  # deploy snapshots to Maven central, but only from master branch
+  - "[[ $TRAVIS_BRANCH == \"master\" ]] && mvn --settings sonatype-settings.xml -DskipTests -B deploy"
