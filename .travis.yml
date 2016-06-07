@@ -1,11 +1,12 @@
+sudo: required
+
+services:
+  - docker
+
 language: java
 
 jdk:
   - oraclejdk7
-
-cache:
-  directories:
-  - $HOME/.m2
 
 env:
   global:
@@ -17,6 +18,7 @@ branches:
     - master
 
 before_install:
+  # troubleshooting info in case of problems
   - docker version
   - docker info
 
