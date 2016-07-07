@@ -557,7 +557,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     // files from resources/copy1
     assertFileExists("target/docker/resources/parent/parent.xml");
     assertFileExists("target/docker/resources/parent/child/child.xml");
-    assertFileDoesNotExist("target/docker/resources/parent/parent.json");
+    assertFileDoesNotExist("target/docker/resources/parent/par\\$ent.json");
     assertFileDoesNotExist("target/docker/resources/parent/child/child-exclude.xml");
 
     // file from resources/copy2

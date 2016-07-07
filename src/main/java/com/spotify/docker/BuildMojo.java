@@ -598,7 +598,8 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     for (final String file : filesToAdd) {
-      commands.add(String.format("ADD %s %s", file, normalizeDest(file)));
+      commands.add(
+              String.format("ADD %s %s", file.replaceAll("\\$", "\\\\\\$"), normalizeDest(file)));
     }
 
     if (runList != null && !runList.isEmpty()) {
