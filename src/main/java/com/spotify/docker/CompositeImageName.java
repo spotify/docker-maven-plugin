@@ -53,11 +53,16 @@ class CompositeImageName {
       throw new MojoExecutionException("imageName not set!");
     }
 
-    final String tag = StringUtils.substringAfterLast(imageName, ":");
     final List<String> tags = new ArrayList<>();
-    tags.add(tag);
+    final String tag = StringUtils.substringAfterLast(imageName, ":");
+    if (StringUtils.isNotBlank(tag)) {
+      tags.add(tag);
+    }
     if (imageTags != null) {
       tags.addAll(imageTags);
+    }
+    if (tags.size() == 0) {
+      throw new MojoExecutionException("No tag included in imageName and no imageTags set!");
     }
     return new CompositeImageName(name, tags);
   }

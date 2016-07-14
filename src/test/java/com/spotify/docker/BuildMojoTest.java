@@ -359,6 +359,26 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     verify(docker).push(eq("busybox:latest"), any(AnsiProgressHandler.class));
   }
 
+  public void testBuildWithMultiplePushTagButNoTagsSpecified() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-push-tags-no-tags-provided.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+
+    try {
+      mojo.execute(docker);
+      fail("mojo should have thrown exception because imageTags are not defined in pom");
+    } catch (MojoExecutionException e) {
+      final String message = "You have used option \"pushImageTag\" but have"
+                             + " not specified an \"imageTag\" in your"
+                             + " docker-maven-client's plugin configuration";
+      assertTrue(String.format("Exception message should have contained '%s'", message),
+                 e.getMessage().contains(message));
+    }
+  }
+
   public void testBuildWithMultipleCompositePushTag() throws Exception {
     final File pom = getTestFile("src/test/resources/pom-build-push-tags-composite.xml");
     assertNotNull("Null pom.xml", pom);

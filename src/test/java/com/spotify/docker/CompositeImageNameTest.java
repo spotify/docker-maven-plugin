@@ -24,6 +24,7 @@ package com.spotify.docker;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -53,39 +54,44 @@ public class CompositeImageNameTest {
   }
 
   @Test
-  public void testCompositeNameWithoutTag() throws MojoExecutionException {
-    final CompositeImageName
-        compositeImageName = CompositeImageName.create("imageName", null);
-    assertEquals("imageName", compositeImageName.getName());
-    assertEquals(1, compositeImageName.getImageTags().size());
-    assertEquals("", compositeImageName.getImageTags().get(0));
-  }
-
-  @Test
   public void testCompositeNameWithoutTagWithImageTags() throws MojoExecutionException {
     final List<String> imageTags = Arrays.asList("tag1", "tag2");
     final CompositeImageName
         compositeImageName = CompositeImageName.create("imageName", imageTags);
     assertEquals("imageName", compositeImageName.getName());
-    assertEquals(3, compositeImageName.getImageTags().size());
-    assertEquals("", compositeImageName.getImageTags().get(0));
-    assertEquals("tag1", compositeImageName.getImageTags().get(1));
-    assertEquals("tag2", compositeImageName.getImageTags().get(2));
+    assertEquals(2, compositeImageName.getImageTags().size());
+    assertEquals("tag1", compositeImageName.getImageTags().get(0));
+    assertEquals("tag2", compositeImageName.getImageTags().get(1));
   }
 
   @Test
-  public void testInvalidCompositeImageName() throws MojoExecutionException {
-    compositeImageNameExpectsException(null);
-    compositeImageNameExpectsException("");
-    compositeImageNameExpectsException(":tagname");
+  public void testInvalidCompositeImageNameAndTagCombinations() throws MojoExecutionException {
+    final String noImageNameErrorMessage = "imageName not set";
+    final String noImageTagsErrorMessage = "no imageTags set";
+    final List<String> emtpy = new ArrayList<>();
+    final List<String> tags = Arrays.asList("tag1", "tag2");
+
+    compositeImageNameExpectsException(noImageNameErrorMessage, null, null);
+    compositeImageNameExpectsException(noImageNameErrorMessage, null, emtpy);
+    compositeImageNameExpectsException(noImageNameErrorMessage, null, tags);
+    compositeImageNameExpectsException(noImageNameErrorMessage, "", null);
+    compositeImageNameExpectsException(noImageNameErrorMessage, "", emtpy);
+    compositeImageNameExpectsException(noImageNameErrorMessage, "", tags);
+    compositeImageNameExpectsException(noImageNameErrorMessage, ":tagname", null);
+    compositeImageNameExpectsException(noImageNameErrorMessage, ":tagname", emtpy);
+    compositeImageNameExpectsException(noImageNameErrorMessage, ":tagname", tags);
+
+    compositeImageNameExpectsException(noImageTagsErrorMessage, "imageName", null);
+    compositeImageNameExpectsException(noImageTagsErrorMessage, "imageName", emtpy);
   }
 
-  private void compositeImageNameExpectsException(final String imageName) {
+  private void compositeImageNameExpectsException(final String message,
+                                                  final String imageName,
+                                                  final List<String> imageTags) {
     try {
-      CompositeImageName.create(imageName, null);
+      CompositeImageName.create(imageName, imageTags);
       fail("Should have thrown exception because ${imageName} is not defined");
     } catch (MojoExecutionException ex) {
-      final String message = "imageName not set";
       assertTrue(String.format("Exception message should have contained '%s'", message),
                  ex.getMessage().contains(message));
     }
