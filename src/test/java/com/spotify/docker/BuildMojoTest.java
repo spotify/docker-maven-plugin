@@ -215,7 +215,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
         eq(DockerClient.BuildParam.create("buildargs", "%7B%22VERSION%22%3A%220.1%22%7D")));
     assertFilesCopied();
   }
-  
+
   public void testBuildWithPush() throws Exception {
     final File pom = getTestFile("src/test/resources/pom-build-push.xml");
     assertNotNull("Null pom.xml", pom);
@@ -228,6 +228,20 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
                          any(AnsiProgressHandler.class));
     verify(docker).push(eq("busybox"), any(AnsiProgressHandler.class));
+  }
+
+  public void testBuildWithPushCompositeImageNameNoTag() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-push-composite.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+    mojo.execute(docker);
+
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox:compositeNameTag"),
+                         any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:compositeNameTag"), any(AnsiProgressHandler.class));
   }
 
   public void testDigestWrittenOnBuildWithPush() throws Exception {
@@ -340,6 +354,23 @@ public class BuildMojoTest extends AbstractMojoTestCase {
 
     verify(docker).build(eq(Paths.get("target/docker")), eq("busybox"),
                          any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:late"), any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:later"), any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:latest"), any(AnsiProgressHandler.class));
+  }
+
+  public void testBuildWithMultipleCompositePushTag() throws Exception {
+    final File pom = getTestFile("src/test/resources/pom-build-push-tags-composite.xml");
+    assertNotNull("Null pom.xml", pom);
+    assertTrue("pom.xml does not exist", pom.exists());
+
+    final BuildMojo mojo = setupMojo(pom);
+    final DockerClient docker = mock(DockerClient.class);
+    mojo.execute(docker);
+
+    verify(docker).build(eq(Paths.get("target/docker")), eq("busybox:compositeTag"),
+                         any(AnsiProgressHandler.class));
+    verify(docker).push(eq("busybox:compositeTag"), any(AnsiProgressHandler.class));
     verify(docker).push(eq("busybox:late"), any(AnsiProgressHandler.class));
     verify(docker).push(eq("busybox:later"), any(AnsiProgressHandler.class));
     verify(docker).push(eq("busybox:latest"), any(AnsiProgressHandler.class));
@@ -501,7 +532,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
         any(ProgressHandler.class),
         eq(BuildParam.noCache()));
   }
-  
+
   private BuildMojo setupMojo(final File pom) throws Exception {
     final MavenProject project = new ProjectStub(pom);
     final MavenSession session = newMavenSession(project);

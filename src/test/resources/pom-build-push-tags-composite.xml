@@ -21,7 +21,7 @@
                     <!-- doesn't set default values even though the are set in mojo-->
                     <dockerHost>http://host:2375</dockerHost>
                     <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
-                    <imageName>busybox</imageName>
+                    <imageName>busybox:compositeTag</imageName>
                     <imageTags>
                         <imageTag>late</imageTag>
                         <imageTag>later</imageTag>
