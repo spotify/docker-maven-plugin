@@ -69,6 +69,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "ENV FOO BAR",
       "WORKDIR /opt/app",
       "ADD resources/parent/child/child.xml resources/parent/child/",
+      "ADD resources/parent/escapedollar\\$sign.xml resources/parent/",
       "ADD resources/parent/parent.xml resources/parent/",
       "ADD copy2.json .",
       "RUN ln -s /a /b",
@@ -85,6 +86,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "ENV FOO BAR",
       "WORKDIR /opt/app",
       "ADD resources/parent/child/child.xml resources/parent/child/",
+      "ADD resources/parent/escapedollar\\$sign.xml resources/parent/",
       "ADD resources/parent/parent.xml resources/parent/",
       "ADD copy2.json .",
       "RUN ln -s /a /b",
@@ -104,6 +106,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "ENV FOO BAR",
       "WORKDIR /opt/app",
       "ADD resources/parent/child/child.xml resources/parent/child/",
+      "ADD resources/parent/escapedollar\\$sign.xml resources/parent/",
       "ADD resources/parent/parent.xml resources/parent/",
       "ADD copy2.json .",
       "RUN ln -s /a /b",
@@ -122,6 +125,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
           "ENV FOO BAR",
           "WORKDIR /opt/app",
           "ADD resources/parent/child/child.xml resources/parent/child/",
+          "ADD resources/parent/escapedollar\\$sign.xml resources/parent/",
           "ADD resources/parent/parent.xml resources/parent/",
           "ADD copy2.json .",
           "RUN ln -s /a /b &&\\",
@@ -555,6 +559,8 @@ public class BuildMojoTest extends AbstractMojoTestCase {
     assertFileExists("target/docker/Dockerfile");
 
     // files from resources/copy1
+    // files including a file with dollar sign because it has to be escaped inside the dockerfile
+    assertFileExists("target/docker/resources/parent/escapedollar$sign.xml");
     assertFileExists("target/docker/resources/parent/parent.xml");
     assertFileExists("target/docker/resources/parent/child/child.xml");
     assertFileDoesNotExist("target/docker/resources/parent/parent.json");
