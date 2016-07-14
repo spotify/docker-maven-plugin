@@ -598,6 +598,7 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     for (final String file : filesToAdd) {
+      // The dollar sign in files has to be escaped because docker interprets it as variable
       commands.add(
               String.format("ADD %s %s", file.replaceAll("\\$", "\\\\\\$"), normalizeDest(file)));
     }
