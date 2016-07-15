@@ -56,10 +56,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
@@ -67,6 +73,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.zip.ZipInputStream;
 
 import static com.google.common.base.CharMatcher.WHITESPACE;
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -218,7 +225,11 @@ public class BuildMojo extends AbstractDockerMojo {
    */
   @Parameter(property = "dockerResources")
   private List<Resource> resources;
-
+  
+  /** Flag to enable archive extracting (only if dockerDirectory is set). Defaults to false. */
+  @Parameter(property = "dockerExtractArchives", defaultValue = "false")
+  private boolean extractArchives;
+   
   /** Built image will be given this name. */
   @Parameter(property = "dockerImageName")
   private String imageName;
@@ -747,12 +758,39 @@ public class BuildMojo extends AbstractDockerMojo {
       } else {
         for (final String included : includedFiles) {
           final Path sourcePath = Paths.get(resource.getDirectory()).resolve(included);
-          final Path destPath = Paths.get(destination, targetPath).resolve(included);
-          getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));
-          // ensure all directories exist because copy operation will fail if they don't
-          Files.createDirectories(destPath.getParent());
-          Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING,
-                     StandardCopyOption.COPY_ATTRIBUTES);
+
+          if (extractArchives && checkIfArchiveFile(sourcePath)) {
+            String archive = sourcePath.getFileName().toString();
+
+            int pos = archive.lastIndexOf('.');
+            if (pos > 0) {
+              archive = archive.substring(0, pos);
+            }
+
+            final Path destPath = Paths.get(destination, targetPath, archive);
+
+            // ensure all directories exist because copy operation will fail if
+            // they don't
+            Files.createDirectories(destPath);
+
+            getLog().info(String.format("Extracting %s -> %s", sourcePath, destPath));
+
+            FileSystem zipFileSystem = FileSystems.newFileSystem(sourcePath, null);
+            final Path root = zipFileSystem.getPath("/");
+
+            Files.walkFileTree(root, new ArchiveFileExtractor(destPath));
+          } else {
+            final Path destPath = Paths.get(destination, targetPath).resolve(included);
+
+            // ensure all directories exist because copy operation will fail if
+            // they don't
+            Files.createDirectories(destPath.getParent());
+
+            getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));
+
+            Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.COPY_ATTRIBUTES);
+          }
 
           copiedPaths.add(separatorsToUnix(Paths.get(targetPath).resolve(included).toString()));
         }
@@ -799,5 +837,66 @@ public class BuildMojo extends AbstractDockerMojo {
         URLEncoder.encode(OBJECT_MAPPER.writeValueAsString(buildArgs), "UTF-8")));
     }
     return buildParams.toArray(new DockerClient.BuildParam[buildParams.size()]);
+  }
+
+  /**
+   * Check if the given path is an archive file.
+   * 
+   * @param filePath
+   *          the path to the file to check
+   * @return <code>true</code> if the file is an archive; <code>false> otherwise
+   */
+  private boolean checkIfArchiveFile(final Path filePath) {
+    boolean result = false;
+
+    ZipInputStream zipFileInputStream = null;
+
+    try {
+      zipFileInputStream = new ZipInputStream(
+          Files.newInputStream(filePath, StandardOpenOption.READ));
+      if (zipFileInputStream.getNextEntry() != null) {
+        result = true;
+      }
+    } catch (IOException e) {
+    } finally {
+      if (zipFileInputStream != null) {
+        try {
+          zipFileInputStream.close();
+        } catch (IOException e) {
+        }
+      }
+    }
+
+    return result;
+  }
+
+  private static final class ArchiveFileExtractor extends SimpleFileVisitor<Path> {
+    private final Path destPath;
+
+    private ArchiveFileExtractor(Path destPath) {
+      this.destPath = destPath;
+    }
+
+    @Override
+    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+        throws IOException {
+      final Path destDir = Paths.get(destPath.toString(), dir.toString());
+
+      if (Files.notExists(destDir)) {
+        Files.createDirectory(destDir);
+      }
+
+      return FileVisitResult.CONTINUE;
+    }
+
+    @Override
+    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+      final Path destFile = Paths.get(destPath.toString(), file.toString());
+
+      Files.copy(file, destFile, StandardCopyOption.REPLACE_EXISTING,
+          StandardCopyOption.COPY_ATTRIBUTES);
+
+      return FileVisitResult.CONTINUE;
+    }
   }
 }
