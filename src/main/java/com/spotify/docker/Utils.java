@@ -115,13 +115,14 @@ public class Utils {
                                          + " not specified an \"imageTag\" in your"
                                          + " docker-maven-client's plugin configuration");
       }
-      for (final String imageTag : imageTags) {
-       final String imageNameWithTag = imageName + ":" + imageTag;
-       log.info("Pushing " + imageName + ":" + imageTag);
-       docker.push(imageNameWithTag, new AnsiProgressHandler());
-      }
+    final CompositeImageName compositeImageName = CompositeImageName.create(imageName, imageTags);
+    for (final String imageTag : compositeImageName.getImageTags()) {
+      final String imageNameWithTag = compositeImageName.getName() + ":" + imageTag;
+      log.info("Pushing " + imageNameWithTag);
+      docker.push(imageNameWithTag, new AnsiProgressHandler());
+    }
   }
-  
+
   public static void writeImageInfoFile(final DockerBuildInformation buildInfo,
                                         final String tagInfoFile) throws IOException {
     final Path imageInfoPath = Paths.get(tagInfoFile);

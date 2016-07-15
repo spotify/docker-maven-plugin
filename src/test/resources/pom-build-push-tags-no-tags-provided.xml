@@ -23,9 +23,6 @@
                     <dockerDirectory>src/test/resources/dockerDirectory</dockerDirectory>
                     <imageName>busybox</imageName>
                     <imageTags>
-                        <imageTag>late</imageTag>
-                        <imageTag>later</imageTag>
-                        <imageTag>latest</imageTag>
                     </imageTags>
                     <!-- test image tag is pushed -->
                     <pushImageTag>true</pushImageTag>
