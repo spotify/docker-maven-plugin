@@ -29,8 +29,11 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.IOException;
+import java.util.List;
 
+import static com.spotify.docker.Utils.parseImageName;
 import static com.spotify.docker.Utils.pushImage;
+import static com.spotify.docker.Utils.pushImageTag;
 
 /**
  * Pushes a docker image repository to the specified docker registry.
@@ -42,8 +45,19 @@ public class PushMojo extends AbstractDockerMojo {
   @Parameter(property = "imageName", required = true)
   private String imageName;
 
+  /** Additional tags to tag the image with. */
+  @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
+  @Parameter(property = "dockerImageTags")
+  private List<String> imageTags;
+
   protected void execute(DockerClient docker)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
+    // Push specific tags specified in pom rather than all images
+    if (imageTags != null && !imageTags.isEmpty()) {
+      final String imageNameWithoutTag = parseImageName(imageName)[0];
+      pushImageTag(docker, imageNameWithoutTag, imageTags, getLog());
+    }
+
     pushImage(docker, imageName, getLog(), null, getRetryPushCount(), getRetryPushTimeout());
   }
 
