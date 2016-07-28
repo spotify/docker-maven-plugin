@@ -712,11 +712,12 @@ public class BuildMojo extends AbstractDockerMojo {
 
     for (final Resource resource : resources) {
       final File source = new File(resource.getDirectory());
-      Files.createDirectories(source.toPath());
+      if (!source.exists()) {
+        Files.createDirectories(source.toPath());
+      }
       final List<String> includes = resource.getIncludes();
       final List<String> excludes = resource.getExcludes();
       final DirectoryScanner scanner = new DirectoryScanner();
-      
       scanner.setBasedir(source);
       // must pass null if includes/excludes is empty to get default filters.
       // passing zero length array forces it to have no filters at all.
