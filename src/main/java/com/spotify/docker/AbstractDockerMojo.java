@@ -27,6 +27,7 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.messages.AuthConfig;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 
 import org.apache.maven.execution.MavenSession;
@@ -103,38 +104,41 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
   public int getRetryPushCount() {
     return retryPushCount;
-  };
+  }
 
+  @Override
   public void execute() throws MojoExecutionException {
-    DockerClient client = null;
-    try {
-      final DefaultDockerClient.Builder builder = getBuilder();
-
-      final String dockerHost = rawDockerHost();
-      if (!isNullOrEmpty(dockerHost)) {
-        builder.uri(dockerHost);
-      }
-      final Optional<DockerCertificates> certs = dockerCertificates();
-      if (certs.isPresent()) {
-        builder.dockerCertificates(certs.get());
-      }
-
-      final AuthConfig authConfig = authConfig();
-      if (authConfig != null) {
-        builder.authConfig(authConfig);
-      }
-
-      client = builder.build();
+    try (DockerClient client = getDockerClient()) {
       execute(client);
     } catch (Exception e) {
       throw new MojoExecutionException("Exception caught", e);
-    } finally {
-      if (client != null) {
-        client.close();
-      }
     }
   }
 
+  private DockerClient getDockerClient()
+      throws DockerCertificateException, MojoExecutionException, SecDispatcherException {
+
+    final DefaultDockerClient.Builder builder = getBuilder();
+
+    final String dockerHost = rawDockerHost();
+    if (!isNullOrEmpty(dockerHost)) {
+      builder.uri(dockerHost);
+    }
+
+    final Optional<DockerCertificates> certs = dockerCertificates();
+    if (certs.isPresent()) {
+      builder.dockerCertificates(certs.get());
+    }
+
+    final AuthConfig authConfig = authConfig();
+    if (authConfig != null) {
+      builder.authConfig(authConfig);
+    }
+
+    return builder.build();
+  }
+
+  @VisibleForTesting
   protected DefaultDockerClient.Builder getBuilder() throws DockerCertificateException {
     return DefaultDockerClient.fromEnv()
       .readTimeoutMillis(0);
@@ -149,7 +153,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   protected Optional<DockerCertificates> dockerCertificates() throws DockerCertificateException {
     if (!isNullOrEmpty(dockerCertPath)) {
       return DockerCertificates.builder()
-        .dockerCertPath(Paths.get(dockerCertPath)).build();
+          .dockerCertPath(Paths.get(dockerCertPath)).build();
     } else {
       return Optional.absent();
     }
@@ -193,6 +197,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
   /**
    * Checks for incomplete private Docker registry authorization settings.
+   *
    * @param username Auth username.
    * @param password Auth password.
    * @param email    Auth email.
@@ -207,11 +212,12 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
   /**
    * Builds the AuthConfig object from server details.
+   *
    * @return AuthConfig
-   * @throws MojoExecutionException
-   * @throws SecDispatcherException
    */
   protected AuthConfig authConfig() throws MojoExecutionException, SecDispatcherException {
+    // first try to construct the authentication config from the user's settings based on the
+    // <server> configured in this mojo
     if (settings != null) {
       final Server server = settings.getServer(serverId);
       if (server != null) {
@@ -226,8 +232,8 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
         if (incompleteAuthSettings(username, password, email)) {
           throw new MojoExecutionException(
-                  "Incomplete Docker registry authorization credentials. "
-                          + "Please provide all of username, password, and email or none.");
+              "Incomplete Docker registry authorization credentials. "
+              + "Please provide all of username, password, and email or none.");
         }
 
         if (!isNullOrEmpty(username)) {
@@ -246,24 +252,34 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         }
 
         return authConfigBuilder.build();
-      } else if (useConfigFile != null && useConfigFile){
+      } else if (useConfigFile != null && useConfigFile) {
 
-          final AuthConfig.Builder authConfigBuilder;
-          try {
-            if (!isNullOrEmpty(registryUrl)) {
-              authConfigBuilder = AuthConfig.fromDockerConfig(registryUrl);
-            } else {
-              authConfigBuilder = AuthConfig.fromDockerConfig();
-            }
-          } catch (IOException ex){
-            throw new MojoExecutionException(
-                      "Docker config file could not be read",
-                      ex
-            );
+        final AuthConfig.Builder authConfigBuilder;
+        try {
+          if (!isNullOrEmpty(registryUrl)) {
+            authConfigBuilder = AuthConfig.fromDockerConfig(registryUrl);
+          } else {
+            authConfigBuilder = AuthConfig.fromDockerConfig();
           }
+        } catch (IOException ex) {
+          throw new MojoExecutionException(
+              "Docker config file could not be read",
+              ex
+          );
+        }
 
-          return authConfigBuilder.build();
+        return authConfigBuilder.build();
       }
+    }
+
+    // fall back to using the .docker configuration file
+    try {
+      return AuthConfig.fromDockerConfig().build();
+    } catch (IOException e) {
+      getLog()
+          .warn("IOException while reading authentication configuration from .docker directory", e);
+    } catch (Exception e) {
+      getLog().debug("Ignoring Exception from AuthConfig.fromDockerConfig()", e);
     }
     return null;
   }
