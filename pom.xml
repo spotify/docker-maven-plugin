@@ -150,6 +150,11 @@
       <version>3.3.3</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.maven.shared</groupId>
+      <artifactId>maven-filtering</artifactId>
+      <version>3.1.1</version>
+    </dependency>
+    <dependency>
       <groupId>org.eclipse.jgit</groupId>
       <artifactId>org.eclipse.jgit</artifactId>
       <version>3.2.0.201312181205-r</version>
@@ -170,6 +175,14 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>2.2.3</version>
+    </dependency>
+
+    <!-- TEST -->
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.1.7</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>

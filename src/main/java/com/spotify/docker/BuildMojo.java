@@ -21,36 +21,47 @@
 
 package com.spotify.docker;
 
+import com.spotify.docker.client.AnsiProgressHandler;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerException;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-
-import com.spotify.docker.client.AnsiProgressHandler;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.exceptions.DockerException;
+import com.google.common.primitives.Ints;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
-
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.PluginParameterExpressionEvaluator;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.filtering.MavenFilteringException;
+import org.apache.maven.shared.filtering.MavenResourcesExecution;
+import org.apache.maven.shared.filtering.MavenResourcesFiltering;
+import org.apache.maven.shared.utils.io.DirectoryScanner;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
-import org.codehaus.plexus.util.DirectoryScanner;
-import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -59,24 +70,28 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.text.MessageFormat;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
-import static com.google.common.base.CharMatcher.WHITESPACE;
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Ordering.natural;
 import static com.spotify.docker.Utils.parseImageName;
 import static com.spotify.docker.Utils.pushImage;
 import static com.spotify.docker.Utils.pushImageTag;
 import static com.spotify.docker.Utils.writeImageInfoFile;
+
+import static com.google.common.base.CharMatcher.WHITESPACE;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Ordering.natural;
 import static com.typesafe.config.ConfigRenderOptions.concise;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 
@@ -85,6 +100,11 @@ import static java.util.Collections.emptyList;
  */
 @Mojo(name = "build")
 public class BuildMojo extends AbstractDockerMojo {
+
+  /**
+   * Default copy includes.
+   */
+  private static final String[] DEFAULT_INCLUDES = {"**/**"};
 
   /**
    * The Unix separator character.
@@ -100,7 +120,132 @@ public class BuildMojo extends AbstractDockerMojo {
    * Json Object Mapper to encode arguments map 
    */
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-  
+
+  /**
+   * Check if the resource path is relative.
+   *
+   * @param resource the resource
+   * @return true if the resource target path is relative, false otherwise
+   */
+  private static boolean isAbsolute(Resource resource) {
+    return resource.getTargetPath() != null && Paths.get(resource.getTargetPath()).isAbsolute();
+  }
+
+  /**
+   * Convert target {@link Path} relative to root.
+   *
+   * @param target the target path
+   * @return if {@code target} is relative then {@code target} otherwise the relative path
+   */
+  private static Path relativeToRoot(Path target) {
+    return target.isAbsolute() ? target.getRoot().relativize(target) : target;
+  }
+
+  /**
+   * Convert {@link Resource} target path to {@link Path} relative to root.
+   *
+   * @param resource the resource
+   * @return the relative path
+   */
+  private static Path relativeToRoot(Resource resource) {
+    return isAbsolute(resource) ? relativeToRoot(Paths.get(targetPath(resource)))
+                                : Paths.get(targetPath(resource));
+  }
+
+  /**
+   * Read the target path from the resource.
+   *
+   * @param resource the resource
+   * @return empty string if target path is null, otherwise the target path is returned
+   */
+  private static String targetPath(Resource resource) {
+    return resource.getTargetPath() == null ? "" : resource.getTargetPath();
+  }
+
+  /**
+   * Ordering utility class pertaining to path strings.
+   */
+  private static final class PathOrdering {
+
+    private static final CharMatcher PATH_MATCHER = CharMatcher.is(File.separatorChar);
+
+    /**
+     * An {@link Ordering} based on {@link #depthFirstNaturalOrder()} where paths are ordered
+     * alphabetically but with the deepest ordered first.
+     *
+     * @return the ordering implementation
+     */
+    static Ordering<String> depthFirstNatural() {
+      return Ordering.from(depthFirstNaturalOrder());
+    }
+
+    /**
+     * A {@link Comparator} where paths are ordered alphabetically but with the deepest ordered
+     * first.
+     *
+     * @return the comparator implementation
+     */
+    static Comparator<String> depthFirstNaturalOrder() {
+      return new Comparator<String>() {
+        // cache segment count for efficiency
+        private final LoadingCache<String, Integer> segmentCache = CacheBuilder.newBuilder()
+            .build(new CacheLoader<String, Integer>() {
+              @Override
+              public Integer load(@Nonnull String key) throws Exception {
+                return PATH_MATCHER.countIn(key);
+              }
+            });
+
+        @Override
+        public int compare(String o1, String o2) {
+          final int depthFirst = Ints.compare(
+              segmentCache.getUnchecked(o2), segmentCache.getUnchecked(o1)
+          );
+          return depthFirst == 0 ? String.CASE_INSENSITIVE_ORDER.compare(o1, o2)
+                                 : depthFirst;
+        }
+      };
+    }
+  }
+
+  /**
+   * Predicate that matches if the supplied input is relative to the root path.
+   */
+  private static class RelativeToRootPredicate implements Predicate<String> {
+    private final Path rootPath;
+
+    /**
+     * Constructs a new predicate with the provided root path.
+     *
+     * @param rootPath the root path
+     */
+    RelativeToRootPredicate(Path rootPath) {
+      this.rootPath = checkNotNull(rootPath, "root path must not be null");
+    }
+
+    @Override
+    public boolean apply(String input) {
+      return Paths.get(input).startsWith(rootPath);
+    }
+  }
+
+  /**
+   * Map input path to unix path format.
+   */
+  private static class SeparatorsToUnixTransform implements Function<String, String> {
+    @Override
+    public String apply(String input) {
+      return separatorsToUnix(input);
+    }
+  }
+
+  /**
+   * The maven resources filtering component, to handle copying of files to docker directory with
+   * filtering.
+   */
+  @Component(role = MavenResourcesFiltering.class, hint = "default")
+  protected MavenResourcesFiltering mavenResourcesFiltering;
+
   /**
    * Directory containing the Dockerfile. If the value is not set, the plugin will generate a
    * Dockerfile using the required baseImage value, plus the optional entryPoint, cmd and maintainer
@@ -108,6 +253,12 @@ public class BuildMojo extends AbstractDockerMojo {
    */
   @Parameter(property = "dockerDirectory")
   private String dockerDirectory;
+
+  /**
+   * The character encoding scheme to be applied when filtering resources.
+   */
+  @Parameter(defaultValue = "${project.build.sourceEncoding}", readonly = true)
+  protected String encoding;
 
   /**
    * Flag to skip docker build, making build goal a no-op. This can be useful when docker:build
@@ -334,6 +485,7 @@ public class BuildMojo extends AbstractDockerMojo {
     mavenProject.getProperties().put("imageName", imageName);
 
     final String destination = getDestination();
+
     if (dockerDirectory == null) {
       final List<String> copiedPaths = copyResources(destination);
       createDockerFile(destination, copiedPaths);
@@ -687,14 +839,17 @@ public class BuildMojo extends AbstractDockerMojo {
     // results in x.tar.gz being expanded *under* the path foo/x.tar.gz/stuff...
     final File file = new File(filePath);
 
-    final String dest;
+    String dest;
     // need to know the path relative to destination to test if it is a file or directory,
     // but only remove the last part of the path if there is a parent (i.e. don't remove a
     // parent path segment from "file.txt")
     if (new File(getDestination(), filePath).isFile()) {
       if (file.getParent() != null) {
         // remove file part of path
-        dest = separatorsToUnix(file.getParent()) + "/";
+        dest = separatorsToUnix(file.getParent());
+        if (!dest.endsWith("/")) {
+          dest = dest + "/";
+        }
       } else {
         // working with a simple "ADD file.txt"
         dest = ".";
@@ -706,70 +861,138 @@ public class BuildMojo extends AbstractDockerMojo {
     return dest;
   }
 
-  private List<String> copyResources(String destination) throws IOException {
-
-    final List<String> allCopiedPaths = newArrayList();
-
+  private List<String> copyResources(String destination)
+      throws IOException, MojoExecutionException {
+    final LinkedList<Resource> copies = Lists.newLinkedList();
     for (final Resource resource : resources) {
-      final File source = new File(resource.getDirectory());
-      final List<String> includes = resource.getIncludes();
-      final List<String> excludes = resource.getExcludes();
-      final DirectoryScanner scanner = new DirectoryScanner();
-      scanner.setBasedir(source);
-      // must pass null if includes/excludes is empty to get default filters.
-      // passing zero length array forces it to have no filters at all.
-      scanner.setIncludes(includes.isEmpty() ? null
-                                             : includes.toArray(new String[includes.size()]));
-      scanner.setExcludes(excludes.isEmpty() ? null
-                                             : excludes.toArray(new String[excludes.size()]));
-      scanner.scan();
+      copies.add(resource.clone());
+    }
+    final ImmutableList<Resource> relativeResources = ImmutableList.copyOf(copies);
 
-      final String[] includedFiles = scanner.getIncludedFiles();
-      if (includedFiles.length == 0) {
-        getLog().info("No resources will be copied, no files match specified patterns");
+    // convert resources relative
+    for (final Resource resource : relativeResources) {
+      final String targetPath = resource.getTargetPath();
+      if (targetPath != null) {
+        resource.setTargetPath(
+            Paths.get(destination).toAbsolutePath().resolve(relativeToRoot(resource)).toString()
+        );
       }
-
-      final List<String> copiedPaths = newArrayList();
-
-      final boolean copyWholeDir = includes.isEmpty() && excludes.isEmpty() &&
-                             resource.getTargetPath() != null;
-
-      // file location relative to docker directory, used later to generate Dockerfile
-      final String targetPath = resource.getTargetPath() == null ? "" : resource.getTargetPath();
-
-      if (copyWholeDir) {
-        final Path destPath = Paths.get(destination, targetPath);
-        getLog().info(String.format("Copying dir %s -> %s", source, destPath));
-
-        Files.createDirectories(destPath);
-        FileUtils.copyDirectoryStructure(source, destPath.toFile());
-        copiedPaths.add(separatorsToUnix(targetPath));
-      } else {
-        for (final String included : includedFiles) {
-          final Path sourcePath = Paths.get(resource.getDirectory()).resolve(included);
-          final Path destPath = Paths.get(destination, targetPath).resolve(included);
-          getLog().info(String.format("Copying %s -> %s", sourcePath, destPath));
-          // ensure all directories exist because copy operation will fail if they don't
-          Files.createDirectories(destPath.getParent());
-          Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING,
-                     StandardCopyOption.COPY_ATTRIBUTES);
-
-          copiedPaths.add(separatorsToUnix(Paths.get(targetPath).resolve(included).toString()));
-        }
-      }
-
-      // The list of included files returned from DirectoryScanner can be in a different order
-      // each time. This causes the ADD statements in the generated Dockerfile to appear in a
-      // different order. We want to avoid this so each run of the plugin always generates the same
-      // Dockerfile, which also makes testing easier. Sort the list of paths for each resource
-      // before adding it to the allCopiedPaths list. This way we follow the ordering of the
-      // resources in the pom, while making sure all the paths of each resource are always in the
-      // same order.
-      Collections.sort(copiedPaths);
-      allCopiedPaths.addAll(copiedPaths);
     }
 
-    return allCopiedPaths;
+    final List<String> combinedFilters = ImmutableList.of();
+    final List<String> nonFilteredFileExtensions = ImmutableList.of();
+    final MavenResourcesExecution mavenResourcesExecution = new MavenResourcesExecution(
+        relativeResources, new File(destination), mavenProject, encoding, combinedFilters,
+        Collections.<String>emptyList(), session
+    );
+
+    mavenResourcesExecution.setInjectProjectBuildFilters(false);
+    mavenResourcesExecution.setFilterFilenames(true);
+
+    // Note, these are properties that the maven resources plugin configures that may be useful to
+    // implement as properties on this mojo at some point.
+
+    // mavenResourcesExecution.setEscapeString(escapeString);
+    // mavenResourcesExecution.setOverwrite(overwrite);
+    // mavenResourcesExecution.setIncludeEmptyDirs(includeEmptyDirs);
+    // mavenResourcesExecution.setSupportMultiLineFiltering( supportMultiLineFiltering );
+    // mavenResourcesExecution.setAddDefaultExcludes( addDefaultExcludes );
+
+    // Handle subject of MRESOURCES-99
+    // Properties additionalProperties = addSeveralSpecialProperties();
+    // mavenResourcesExecution.setAdditionalProperties( additionalProperties );
+
+    // if these are NOT set, just use the defaults, which are '${*}' and '@'.
+    // mavenResourcesExecution.setDelimiters( delimiters, useDefaultDelimiters );
+
+    if (nonFilteredFileExtensions != null) {
+      mavenResourcesExecution.setNonFilteredFileExtensions(nonFilteredFileExtensions);
+    }
+
+    Files.createDirectories(Paths.get(destination));
+    try {
+      mavenResourcesFiltering.filterResources(mavenResourcesExecution);
+    } catch (MavenFilteringException e) {
+      throw new MojoExecutionException(e.getMessage(), e);
+    }
+
+    final DirectoryScanner scanner = new DirectoryScanner();
+    scanner.setBasedir(destination);
+    scanner.scan();
+    final String[] filesAdded = scanner.getIncludedFiles();
+
+    final List<String> possibleFileMatches = newArrayList(filesAdded);
+    final List<String> addedPaths = Lists.newLinkedList();
+
+    // copied whole directories
+    final List<Resource> partialResources = Lists.newLinkedList();
+    for (final Resource resource : resources) {
+      final boolean copyWholeDir =
+          resource.getIncludes().isEmpty()
+          && resource.getExcludes().isEmpty()
+          && resource.getTargetPath() != null;
+
+      if (copyWholeDir) {
+        final Path relativeToRoot = relativeToRoot(resource);
+
+        final List<String> matchesWholeDir = FluentIterable.from(possibleFileMatches).filter(
+            new RelativeToRootPredicate(relativeToRoot)
+        ).toList();
+
+        if (!possibleFileMatches.isEmpty()) {
+          addedPaths.add(resource.getTargetPath());
+          for (final String match : matchesWholeDir) {
+            possibleFileMatches.remove(match);
+          }
+        }
+      } else {
+        partialResources.add(resource);
+      }
+    }
+
+    // copied filtered set of files
+    for (final Resource resource : partialResources) {
+      final Path relativeToRoot = relativeToRoot(resource);
+
+      // setup scanner
+      final DirectoryScanner scan = new DirectoryScanner();
+      scan.setBasedir(Paths.get(destination).resolve(relativeToRoot).toString());
+      if (!resource.getIncludes().isEmpty()) {
+        scan.setIncludes(resource.getIncludes().toArray(new String[resource.getIncludes().size()]));
+      } else {
+        scan.setIncludes(DEFAULT_INCLUDES);
+      }
+
+      if (!resource.getExcludes().isEmpty()) {
+        scan.setExcludes(resource.getExcludes().toArray(new String[resource.getIncludes().size()]));
+      }
+
+      if (mavenResourcesExecution.isAddDefaultExcludes()) {
+        scan.addDefaultExcludes();
+      }
+
+      scan.scan();
+
+      for (final String file : scan.getIncludedFiles()) {
+        final String addedFile = Paths.get(targetPath(resource), file).toString();
+        final String relativeAddedFile = relativeToRoot.resolve(file).toString();
+        if (possibleFileMatches.contains(relativeAddedFile) && !addedPaths.contains(addedFile)) {
+          addedPaths.add(addedFile);
+          possibleFileMatches.remove(addedFile);
+        }
+      }
+    }
+
+    // The list of included files returned from DirectoryScanner can be in a different order
+    // each time. This causes the ADD statements in the generated Dockerfile to appear in a
+    // different order. We want to avoid this so each run of the plugin always generates the same
+    // Dockerfile, which also makes testing easier. Sort the list of paths for each resource
+    // before adding it to the allCopiedPaths list. This way we follow the ordering of the
+    // resources in the pom, while making sure all the paths of each resource are always in the
+    // same order.
+    return FluentIterable.from(addedPaths)
+        .transform(new SeparatorsToUnixTransform())
+        .toSortedList(PathOrdering.depthFirstNatural());
   }
 
   /**
