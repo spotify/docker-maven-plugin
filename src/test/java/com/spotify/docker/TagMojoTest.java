@@ -23,20 +23,26 @@ package com.spotify.docker;
 
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
-
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.mockito.ArgumentCaptor;
 
 import java.io.File;
 
-import static com.spotify.docker.TestUtils.getPomAndAssertExists;
-import static org.mockito.Mockito.*;
-import static org.assertj.core.api.Assertions.*;
+import static com.spotify.docker.TestUtils.getPom;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 public class TagMojoTest extends AbstractMojoTestCase {
 
   public void testTag1() throws Exception {
-    final File pom = getPomAndAssertExists("/pom-tag1.xml");
+    final File pom = getPom("/pom-tag1.xml");
 
     final TagMojo mojo = (TagMojo) lookupMojo("tag", pom);
     assertNotNull(mojo);
@@ -47,7 +53,7 @@ public class TagMojoTest extends AbstractMojoTestCase {
   }
 
   public void testTag2() throws Exception {
-    final File pom = getPomAndAssertExists("/pom-tag2.xml");
+    final File pom = getPom("/pom-tag2.xml");
 
     final TagMojo mojo = (TagMojo) lookupMojo("tag", pom);
     assertNotNull(mojo);
@@ -65,7 +71,7 @@ public class TagMojoTest extends AbstractMojoTestCase {
   }
 
   public void testTag3() throws Exception {
-    final File pom = getPomAndAssertExists("/pom-tag3.xml");
+    final File pom = getPom("/pom-tag3.xml");
 
     final TagMojo mojo = (TagMojo) lookupMojo("tag", pom);
     assertNotNull(mojo);
@@ -76,7 +82,7 @@ public class TagMojoTest extends AbstractMojoTestCase {
 
   public void testTagSkipTag() throws Exception {
     final TagMojo mojo = (TagMojo) lookupMojo("tag",
-        getPomAndAssertExists("/pom-tag-skip-tag.xml"));
+        getPom("/pom-tag-skip-tag.xml"));
     assertThat(mojo).isNotNull();
     assertThat(mojo.isSkipDockerTag()).isTrue();
 
@@ -89,7 +95,7 @@ public class TagMojoTest extends AbstractMojoTestCase {
 
   public void testTagSkipDocker() throws Exception {
     final TagMojo mojo = (TagMojo) lookupMojo("tag",
-        getPomAndAssertExists("/pom-tag-skip-docker.xml"));
+        getPom("/pom-tag-skip-docker.xml"));
     assertThat(mojo.isSkipDocker()).isTrue();
 
     final TagMojo mojoSpy = spy(mojo);

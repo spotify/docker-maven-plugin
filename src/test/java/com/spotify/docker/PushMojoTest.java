@@ -30,14 +30,22 @@ import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import java.io.File;
 
 import static com.googlecode.catchexception.CatchException.verifyException;
-import static com.spotify.docker.TestUtils.getPomAndAssertExists;
-import static org.mockito.Mockito.*;
-import static org.assertj.core.api.Assertions.*;
+import static com.spotify.docker.TestUtils.getPom;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class PushMojoTest extends AbstractMojoTestCase {
 
   public void testPush() throws Exception {
-    final File pom = getPomAndAssertExists("/pom-push.xml");
+    final File pom = getPom("/pom-push.xml");
 
     final PushMojo mojo = (PushMojo) lookupMojo("push", pom);
     assertNotNull(mojo);
@@ -47,7 +55,7 @@ public class PushMojoTest extends AbstractMojoTestCase {
   }
 
   public void testFailingPushWithRetries() throws Exception {
-    final File pom = getPomAndAssertExists("/pom-push.xml");
+    final File pom = getPom("/pom-push.xml");
 
     final PushMojo mojo = (PushMojo) lookupMojo("push", pom);
     assertNotNull(mojo);
@@ -60,7 +68,7 @@ public class PushMojoTest extends AbstractMojoTestCase {
   }
 
   public void testPushPrivateRepo() throws Exception {
-    final File pom = getPomAndAssertExists("/pom-push-private-repo.xml");
+    final File pom = getPom("/pom-push-private-repo.xml");
 
     final PushMojo mojo = (PushMojo) lookupMojo("push", pom);
     assertNotNull(mojo);
@@ -80,7 +88,7 @@ public class PushMojoTest extends AbstractMojoTestCase {
   public void testPushSkipPush() throws Exception {
 
     final PushMojo mojo = (PushMojo) lookupMojo("push",
-        getPomAndAssertExists("/pom-push-skip-push.xml"));
+        getPom("/pom-push-skip-push.xml"));
     assertThat(mojo).isNotNull();
     assertThat(mojo.isSkipDockerPush()).isTrue();
 
@@ -93,7 +101,7 @@ public class PushMojoTest extends AbstractMojoTestCase {
 
   public void testPushSkipDocker() throws Exception {
     final PushMojo mojo = (PushMojo) lookupMojo("push",
-        getPomAndAssertExists("/pom-push-skip-docker.xml"));
+        getPom("/pom-push-skip-docker.xml"));
     assertThat(mojo).isNotNull();
     assertThat(mojo.isSkipDocker()).isTrue();
 
