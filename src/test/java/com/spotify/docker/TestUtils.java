@@ -21,33 +21,15 @@
 
 package com.spotify.docker;
 
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.exceptions.DockerException;
+import java.io.File;
 
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
+public class TestUtils {
 
-import java.io.IOException;
+  private TestUtils() {
+  }
 
-import static com.spotify.docker.Utils.pushImage;
-
-/**
- * Pushes a docker image repository to the specified docker registry.
- */
-@Mojo(name = "push")
-public class PushMojo extends AbstractDockerMojo {
-
-  /** Name of image to push. */
-  @Parameter(property = "imageName", required = true)
-  private String imageName;
-
-  @Override
-  protected void execute(DockerClient docker)
-      throws MojoExecutionException, DockerException, IOException, InterruptedException {
-
-    pushImage(docker, imageName, getLog(), null, getRetryPushCount(), getRetryPushTimeout(),
-        isSkipDockerPush());
+  public static File getPom(String filename) throws Exception {
+    return new File(TestUtils.class.getResource(filename).toURI());
   }
 
 }

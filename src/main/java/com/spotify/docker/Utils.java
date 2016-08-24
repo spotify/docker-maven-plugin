@@ -70,8 +70,14 @@ public class Utils {
 
   public static void pushImage(DockerClient docker, String imageName, Log log,
                                final DockerBuildInformation buildInfo,
-                               int retryPushCount, int retryPushTimeout)
+                               int retryPushCount, int retryPushTimeout, boolean skipPush)
           throws MojoExecutionException, DockerException, IOException, InterruptedException {
+
+    if (skipPush) {
+      log.info("Skipping docker push");
+      return;
+    }
+
     int attempt = 0;
     do {
       final AnsiProgressHandler ansiProgressHandler = new AnsiProgressHandler();
@@ -107,14 +113,19 @@ public class Utils {
 
   // push just the tags listed in the pom rather than all images using imageName
   public static void pushImageTag(DockerClient docker, String imageName,
-                                List<String> imageTags, Log log)
+                                List<String> imageTags, Log log, boolean skipPush)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
-      // tags should not be empty if you have specified the option to push tags
-      if (imageTags.isEmpty()) {
-        throw new MojoExecutionException("You have used option \"pushImageTag\" but have"
-                                         + " not specified an \"imageTag\" in your"
-                                         + " docker-maven-client's plugin configuration");
-      }
+
+    if (skipPush) {
+      log.info("Skipping docker push");
+      return;
+    }
+    // tags should not be empty if you have specified the option to push tags
+    if (imageTags.isEmpty()) {
+      throw new MojoExecutionException("You have used option \"pushImageTag\" but have"
+                                       + " not specified an \"imageTag\" in your"
+                                       + " docker-maven-client's plugin configuration");
+    }
     final CompositeImageName compositeImageName = CompositeImageName.create(imageName, imageTags);
     for (final String imageTag : compositeImageName.getImageTags()) {
       final String imageNameWithTag = compositeImageName.getName() + ":" + imageTag;

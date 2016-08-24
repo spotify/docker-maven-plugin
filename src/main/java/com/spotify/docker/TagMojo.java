@@ -87,6 +87,10 @@ public class TagMojo extends AbstractDockerMojo {
   @Parameter(property = "useGitCommitId", defaultValue = "false")
   private boolean useGitCommitId;
 
+  public boolean isSkipDockerTag() {
+    return skipDockerTag;
+  }
+
   @Override
   protected void execute(DockerClient docker)
       throws MojoExecutionException, DockerException,
@@ -116,7 +120,8 @@ public class TagMojo extends AbstractDockerMojo {
     final DockerBuildInformation buildInfo = new DockerBuildInformation(normalizedName, getLog());
 
     if (pushImage) {
-      pushImage(docker, newName, getLog(), buildInfo, getRetryPushCount(), getRetryPushTimeout());
+      pushImage(docker, newName, getLog(), buildInfo, getRetryPushCount(), getRetryPushTimeout(),
+          isSkipDockerPush());
     }
 
     writeImageInfoFile(buildInfo, tagInfoFile);
