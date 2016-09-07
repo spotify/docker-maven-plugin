@@ -527,6 +527,18 @@ public class BuildMojoTest extends AbstractMojoTestCase {
         eq(BuildParam.noCache()));
   }
 
+  public void testRmFalse() throws Exception {
+    final BuildMojo mojo = setupMojo(getPom("/pom-build-rm-false.xml"));
+    final DockerClient docker = mock(DockerClient.class);
+
+    mojo.execute(docker);
+
+    verify(docker).build(any(Path.class),
+        anyString(),
+        any(ProgressHandler.class),
+        eq(BuildParam.rm(false)));
+  }
+
   public void testBuildWithSkipDockerBuild() throws Exception {
     final BuildMojo mojo = setupMojo(getPom("/pom-build-skip-build.xml"));
     assertThat(mojo.isSkipDockerBuild()).isTrue();
