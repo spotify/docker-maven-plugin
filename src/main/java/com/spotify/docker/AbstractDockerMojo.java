@@ -275,24 +275,26 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         }
 
         return authConfigBuilder.build();
-      } else if (useConfigFile != null && useConfigFile){
-
-          final AuthConfig.Builder authConfigBuilder;
-          try {
-            if (!isNullOrEmpty(registryUrl)) {
-              authConfigBuilder = AuthConfig.fromDockerConfig(registryUrl);
-            } else {
-              authConfigBuilder = AuthConfig.fromDockerConfig();
-            }
-          } catch (IOException ex){
-            throw new MojoExecutionException(
-                      "Docker config file could not be read",
-                      ex
-            );
-          }
-
-          return authConfigBuilder.build();
       }
+    }
+
+    // use config file as last-effort fallback
+    if (useConfigFile != null && useConfigFile){
+      final AuthConfig.Builder authConfigBuilder;
+      try {
+        if (!isNullOrEmpty(registryUrl)) {
+          authConfigBuilder = AuthConfig.fromDockerConfig(registryUrl);
+        } else {
+          authConfigBuilder = AuthConfig.fromDockerConfig();
+        }
+      } catch (IOException ex){
+        throw new MojoExecutionException(
+                  "Docker config file could not be read",
+                  ex
+        );
+      }
+
+      return authConfigBuilder.build();
     }
     return null;
   }
