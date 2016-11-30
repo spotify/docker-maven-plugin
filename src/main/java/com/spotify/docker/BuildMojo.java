@@ -377,7 +377,11 @@ public class BuildMojo extends AbstractDockerMojo {
   }
 
   private String getDestination() {
-    return Paths.get(buildDirectory, "docker").toString();
+    String directory = "docker";
+    if (execution.getExecutionId() != null) {
+      directory += '-' + execution.getExecutionId();
+    }
+    return Paths.get(buildDirectory, directory).toString();
   }
 
   private File createImageArtifact(final Artifact mainArtifact,
