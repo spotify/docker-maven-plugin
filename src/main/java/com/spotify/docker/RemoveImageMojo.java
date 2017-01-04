@@ -59,9 +59,11 @@ public class RemoveImageMojo extends AbstractDockerMojo {
   @Override
   protected void execute(final DockerClient docker)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
-    final String imageNameWithoutTag = parseImageName(imageName)[0];
-    if (imageTags == null) {
-      imageTags = Collections.singletonList("");
+    final String[] parsedImageName = parseImageName(imageName);
+    final String imageNameWithoutTag = parsedImageName[0];
+    final String parsedImageTag = parsedImageName[1];
+    if (imageTags == null || imageTags.isEmpty()) {
+      imageTags = Collections.singletonList(parsedImageTag);
     }
 
     for (final String imageTag : imageTags) {
