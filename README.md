@@ -148,7 +148,7 @@ Optionally, you can force docker to overwrite your image tags on each new build:
 
 Tags-to-be-pushed can also be specified directly on the command line with
 
-    mvn ... docker:build -DpushImageTag -DdockerImageTags=latest -DdockerImageTags=another-tag
+    mvn ... docker:build -DpushImageTag -DdockerImageTags=latest,another-tag
 
 ### Bind Docker commands to Maven phases
 
