@@ -26,6 +26,10 @@
           <env>
             <FOO>BAR</FOO>
           </env>
+          <healthcheck> 
+            <options>--interval=30s</options>
+          	<cmd>curl --fail http://localhost:8080/ || exit 1</cmd>
+          </healthcheck>
           <exposes>
             <expose>8081</expose>
             <expose>8080</expose>
