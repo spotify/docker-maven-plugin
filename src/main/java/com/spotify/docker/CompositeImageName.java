@@ -48,13 +48,15 @@ class CompositeImageName {
   static CompositeImageName create(final String imageName, final List<String> imageTags)
       throws MojoExecutionException {
 
-    final String name = StringUtils.substringBeforeLast(imageName, ":");
+    final boolean containsTag = containsTag(imageName);
+
+    final String name = containsTag ? StringUtils.substringBeforeLast(imageName, ":") : imageName;
     if (StringUtils.isBlank(name)) {
       throw new MojoExecutionException("imageName not set!");
     }
 
     final List<String> tags = new ArrayList<>();
-    final String tag = StringUtils.substringAfterLast(imageName, ":");
+    final String tag = containsTag ? StringUtils.substringAfterLast(imageName, ":") : "";
     if (StringUtils.isNotBlank(tag)) {
       tags.add(tag);
     }
@@ -73,5 +75,20 @@ class CompositeImageName {
 
   public List<String> getImageTags() {
     return imageTags;
+  }
+
+  static boolean containsTag(String imageName) {
+    if (StringUtils.contains(imageName, ":")) {
+      if (StringUtils.contains(imageName, "/")) {
+        final String registryPart = StringUtils.substringBeforeLast(imageName, "/");
+        final String imageNamePart = StringUtils.substring(imageName, registryPart.length() + 1);
+
+        return StringUtils.contains(imageNamePart, ":");
+      } else {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
