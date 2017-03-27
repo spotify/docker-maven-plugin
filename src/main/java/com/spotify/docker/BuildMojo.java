@@ -75,6 +75,7 @@ import static com.google.common.collect.Ordering.natural;
 import static com.spotify.docker.Utils.parseImageName;
 import static com.spotify.docker.Utils.pushImage;
 import static com.spotify.docker.Utils.pushImageTag;
+import static com.spotify.docker.Utils.saveImage;
 import static com.spotify.docker.Utils.writeImageInfoFile;
 import static com.typesafe.config.ConfigRenderOptions.concise;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -130,6 +131,10 @@ public class BuildMojo extends AbstractDockerMojo {
   /** Set to false to pass the `--rm` flag to the Docker daemon when building an image. */
   @Parameter(property = "rm", defaultValue = "true")
   private boolean rm;
+
+  /** File path to save image as a tar archive after it is built. */
+  @Parameter(property = "saveImageToTarArchive")
+  private String saveImageToTarArchive;
 
   /** Flag to push image after it is built. Defaults to false. */
   @Parameter(property = "pushImage", defaultValue = "false")
@@ -370,6 +375,10 @@ public class BuildMojo extends AbstractDockerMojo {
     if (pushImage) {
       pushImage(docker, imageName, getLog(), buildInfo, getRetryPushCount(), getRetryPushTimeout(),
           isSkipDockerPush());
+    }
+
+    if (saveImageToTarArchive != null) {
+        saveImage(docker, imageName, Paths.get(saveImageToTarArchive), getLog());
     }
 
     // Write image info file
