@@ -5,7 +5,8 @@
 
 A Maven plugin for building and pushing Docker images.
 
-* [Why](#why)
+* [The future of docker-maven-plugin](#the-future-of-docker-maven-plugin)
+* [Purpose](#purpose)
 * [Setup](#setup)
   * [Specify build info in the POM](#specify-build-info-in-the-pom)
   * [Use a Dockerfile](#use-a-dockerfile)
@@ -15,8 +16,35 @@ A Maven plugin for building and pushing Docker images.
 * [Releasing](#releasing)
 * [Known Issues](#known-issues)
 
+## The future of docker-maven-plugin
 
-## Why?
+This plugin was the initial Maven plugin used at Spotify for building Docker
+images out of Java services. It was initially created in 2014 when we first
+began experimenting with Docker. This plugin is capable of generating a
+`Dockerfile` for you based on configuration in the pom.xml file for things like
+the `FROM` image, resources to add with `ADD`/`COPY`, etc.
+
+Over time at Spotify we have realized that the simplest way to build a Docker
+image from a Java project is to have the developer write the `Dockerfile`.  The
+behavior of this plugin around generating Dockerfiles, copying your project
+directory to a "staging" directory to use as the Docker build context, etc.,
+ultimately led to a lot of unnecessary confusion with our users that stemmed
+from introducing extra abstractions and a need for configuration on top of what
+Docker is providing.
+
+This led to the creation of a second Maven plugin for building docker images,
+[dockerfile-maven][], which we think offers a simpler mental model of working
+with Docker from Maven, for all of the reasons outlined in dockerfile-maven's
+README.
+
+**We recommend that new projects use [dockerfile-maven][].**
+
+We are still happy to review new contributions to `docker-maven-plugin`, but we
+do not plan on making major new contributions ourselves in the future.
+
+[dockerfile-maven]: https://github.com/spotify/dockerfile-maven
+
+## Purpose
 
 You can use this plugin to create a Docker image with artifacts built from your Maven project. For
 example, the build process for a Java service can output a Docker image that runs the service.
