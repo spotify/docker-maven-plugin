@@ -177,8 +177,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   }
 
   protected Optional<DockerCertificatesStore> dockerCertificates()
-      throws DockerCertificateException
-  {
+      throws DockerCertificateException {
     if (!isNullOrEmpty(dockerCertPath)) {
       return DockerCertificates.builder()
         .dockerCertPath(Paths.get(dockerCertPath)).build();
@@ -247,7 +246,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     if (settings != null) {
       final Server server = settings.getServer(serverId);
       if (server != null) {
-        final RegistryAuth.Builder RegistryAuthBuilder = RegistryAuth.builder();
+        final RegistryAuth.Builder registryAuthBuilder = RegistryAuth.builder();
 
         final String username = server.getUsername();
         String password = server.getPassword();
@@ -263,29 +262,29 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         }
 
         if (!isNullOrEmpty(username)) {
-          RegistryAuthBuilder.username(username);
+          registryAuthBuilder.username(username);
         }
         if (!isNullOrEmpty(email)) {
-          RegistryAuthBuilder.email(email);
+          registryAuthBuilder.email(email);
         }
         if (!isNullOrEmpty(password)) {
-          RegistryAuthBuilder.password(password);
+          registryAuthBuilder.password(password);
         }
         // registryUrl is optional.
         // Spotify's docker-client defaults to 'https://index.docker.io/v1/'.
         if (!isNullOrEmpty(registryUrl)) {
-          RegistryAuthBuilder.serverAddress(registryUrl);
+          registryAuthBuilder.serverAddress(registryUrl);
         }
 
-        return RegistryAuthBuilder.build();
+        return registryAuthBuilder.build();
       } else if (useConfigFile != null && useConfigFile){
 
-          final RegistryAuth.Builder RegistryAuthBuilder;
+          final RegistryAuth.Builder registryAuthBuilder;
           try {
             if (!isNullOrEmpty(registryUrl)) {
-              RegistryAuthBuilder = RegistryAuth.fromDockerConfig(registryUrl);
+              registryAuthBuilder = RegistryAuth.fromDockerConfig(registryUrl);
             } else {
-              RegistryAuthBuilder = RegistryAuth.fromDockerConfig();
+              registryAuthBuilder = RegistryAuth.fromDockerConfig();
             }
           } catch (IOException ex){
             throw new MojoExecutionException(
@@ -294,7 +293,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
             );
           }
 
-          return RegistryAuthBuilder.build();
+          return registryAuthBuilder.build();
       }
     }
     return null;
