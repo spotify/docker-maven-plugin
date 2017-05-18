@@ -23,9 +23,10 @@ package com.spotify.docker;
 
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificates;
+import com.spotify.docker.client.DockerCertificatesStore;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
-import com.spotify.docker.client.messages.AuthConfig;
+import com.spotify.docker.client.messages.RegistryAuth;
 
 import com.google.common.base.Optional;
 
@@ -156,14 +157,14 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     if (!isNullOrEmpty(dockerHost)) {
       builder.uri(dockerHost);
     }
-    final Optional<DockerCertificates> certs = dockerCertificates();
+    final Optional<DockerCertificatesStore> certs = dockerCertificates();
     if (certs.isPresent()) {
       builder.dockerCertificates(certs.get());
     }
 
-    final AuthConfig authConfig = authConfig();
-    if (authConfig != null) {
-      builder.authConfig(authConfig);
+    final RegistryAuth registryAuth = registryAuth();
+    if (registryAuth != null) {
+      builder.registryAuth(registryAuth);
     }
 
     return builder.build();
@@ -175,7 +176,9 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     return dockerHost;
   }
 
-  protected Optional<DockerCertificates> dockerCertificates() throws DockerCertificateException {
+  protected Optional<DockerCertificatesStore> dockerCertificates()
+      throws DockerCertificateException
+  {
     if (!isNullOrEmpty(dockerCertPath)) {
       return DockerCertificates.builder()
         .dockerCertPath(Paths.get(dockerCertPath)).build();
@@ -235,16 +238,16 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   }
 
   /**
-   * Builds the AuthConfig object from server details.
-   * @return AuthConfig
+   * Builds the registryAuth object from server details.
+   * @return registryAuth
    * @throws MojoExecutionException
    * @throws SecDispatcherException
    */
-  protected AuthConfig authConfig() throws MojoExecutionException, SecDispatcherException {
+  protected RegistryAuth registryAuth() throws MojoExecutionException, SecDispatcherException {
     if (settings != null) {
       final Server server = settings.getServer(serverId);
       if (server != null) {
-        final AuthConfig.Builder authConfigBuilder = AuthConfig.builder();
+        final RegistryAuth.Builder RegistryAuthBuilder = RegistryAuth.builder();
 
         final String username = server.getUsername();
         String password = server.getPassword();
@@ -260,29 +263,29 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         }
 
         if (!isNullOrEmpty(username)) {
-          authConfigBuilder.username(username);
+          RegistryAuthBuilder.username(username);
         }
         if (!isNullOrEmpty(email)) {
-          authConfigBuilder.email(email);
+          RegistryAuthBuilder.email(email);
         }
         if (!isNullOrEmpty(password)) {
-          authConfigBuilder.password(password);
+          RegistryAuthBuilder.password(password);
         }
         // registryUrl is optional.
         // Spotify's docker-client defaults to 'https://index.docker.io/v1/'.
         if (!isNullOrEmpty(registryUrl)) {
-          authConfigBuilder.serverAddress(registryUrl);
+          RegistryAuthBuilder.serverAddress(registryUrl);
         }
 
-        return authConfigBuilder.build();
+        return RegistryAuthBuilder.build();
       } else if (useConfigFile != null && useConfigFile){
 
-          final AuthConfig.Builder authConfigBuilder;
+          final RegistryAuth.Builder RegistryAuthBuilder;
           try {
             if (!isNullOrEmpty(registryUrl)) {
-              authConfigBuilder = AuthConfig.fromDockerConfig(registryUrl);
+              RegistryAuthBuilder = RegistryAuth.fromDockerConfig(registryUrl);
             } else {
-              authConfigBuilder = AuthConfig.fromDockerConfig();
+              RegistryAuthBuilder = RegistryAuth.fromDockerConfig();
             }
           } catch (IOException ex){
             throw new MojoExecutionException(
@@ -291,7 +294,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
             );
           }
 
-          return authConfigBuilder.build();
+          return RegistryAuthBuilder.build();
       }
     }
     return null;
