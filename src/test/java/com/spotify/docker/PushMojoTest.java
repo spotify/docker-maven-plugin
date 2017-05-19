@@ -24,7 +24,7 @@ package com.spotify.docker;
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.AuthConfig;
+import com.spotify.docker.client.messages.RegistryAuth;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 
 import java.io.File;
@@ -73,7 +73,7 @@ public class PushMojoTest extends AbstractMojoTestCase {
     final PushMojo mojo = (PushMojo) lookupMojo("push", pom);
     assertNotNull(mojo);
 
-    final AuthConfig authConfig = mojo.authConfig();
+    final RegistryAuth authConfig = mojo.registryAuth();
     assertEquals("dxia3", authConfig.username());
     assertEquals("SxpxdUQA2mvX7oj", authConfig.password()); // verify decryption
     assertEquals("dxia+3@spotify.com", authConfig.email());

@@ -25,7 +25,7 @@ import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.messages.AuthConfig;
+import com.spotify.docker.client.messages.RegistryAuth;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -73,7 +73,7 @@ public class AbstractDockerMojoTest {
   private DefaultDockerClient.Builder builder;
 
   @Captor
-  private ArgumentCaptor<AuthConfig> authConfigCaptor;
+  private ArgumentCaptor<RegistryAuth> authConfigCaptor;
 
   @InjectMocks
   private AbstractDockerMojo sut = new AbstractDockerMojo() {
@@ -102,7 +102,7 @@ public class AbstractDockerMojoTest {
 
     verify(builder).uri(DOCKER_HOST);
     verify(builder).dockerCertificates(any(DockerCertificates.class));
- 
+
   }
 
   @Test
@@ -200,11 +200,11 @@ public class AbstractDockerMojoTest {
     ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
 
     when(settings.getServer(SERVER_ID)).thenReturn(mockServer());
-    when(builder.authConfig(authConfigCaptor.capture())).thenReturn(builder);
+    when(builder.registryAuth(authConfigCaptor.capture())).thenReturn(builder);
 
     sut.execute();
 
-    final AuthConfig authConfig = authConfigCaptor.getValue();
+    final RegistryAuth authConfig = authConfigCaptor.getValue();
     assertThat(authConfig).isNotNull();
     assertThat(authConfig.email()).isEqualTo(EMAIL);
     assertThat(authConfig.password()).isEqualTo(PASSWORD);
@@ -218,11 +218,11 @@ public class AbstractDockerMojoTest {
     ReflectionTestUtils.setField(sut, "registryUrl", REGISTRY_URL);
 
     when(settings.getServer(SERVER_ID)).thenReturn(mockServer());
-    when(builder.authConfig(authConfigCaptor.capture())).thenReturn(builder);
+    when(builder.registryAuth(authConfigCaptor.capture())).thenReturn(builder);
 
     sut.execute();
 
-    final AuthConfig authConfig = authConfigCaptor.getValue();
+    final RegistryAuth authConfig = authConfigCaptor.getValue();
     assertThat(authConfig).isNotNull();
     assertThat(authConfig.serverAddress()).isEqualTo(REGISTRY_URL);
   }

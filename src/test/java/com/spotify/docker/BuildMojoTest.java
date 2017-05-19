@@ -248,8 +248,9 @@ public class BuildMojoTest extends AbstractMojoTestCase {
 
     final String digest =
         "sha256:ebd39c3e3962f804787f6b0520f8f1e35fbd5a01ab778ac14c8d6c37978e8445";
-    final ProgressMessage digestProgressMessage = new ProgressMessage().status(
-        "Digest: " + digest);
+    final ProgressMessage digestProgressMessage = ProgressMessage.builder().status(
+        "Digest: " + digest
+    ).build();
 
     doAnswer(new Answer() {
       @Override
@@ -282,8 +283,9 @@ public class BuildMojoTest extends AbstractMojoTestCase {
 
     final String digest =
         "sha256:ebd39c3e3962f804787f6b0520f8f1e35fbd5a01ab778ac14c8d6c37978e8445";
-    final ProgressMessage digestProgressMessage = new ProgressMessage().status(
-        "Digest: " + digest);
+    final ProgressMessage digestProgressMessage = ProgressMessage.builder().status(
+        "Digest: " + digest
+    ).build();
 
     doAnswer(new Answer() {
       @Override
