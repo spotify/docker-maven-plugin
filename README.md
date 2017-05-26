@@ -5,6 +5,8 @@
 
 A Maven plugin for building and pushing Docker images.
 
+### We recommend that new projects use [dockerfile-maven][]. See below for more details.
+
 * [The future of docker-maven-plugin](#the-future-of-docker-maven-plugin)
 * [Purpose](#purpose)
 * [Setup](#setup)
