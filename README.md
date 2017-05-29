@@ -42,7 +42,13 @@ README.
 We are still happy to review new contributions to `docker-maven-plugin`, but we
 do not plan on making major new contributions ourselves in the future.
 
+Alternatively, if you still require a fully supported docker-maven-plugin with support 
+for building Docker images (also based on Dockerfiles) and running Docker 
+containers for integration tests, you might want to have a look at 
+[fabric8io/docker-maven-plugin][], too. 
+
 [dockerfile-maven]: https://github.com/spotify/dockerfile-maven
+[fabric8io/docker-maven-plugin]: https://github.com/fabric8io/docker-maven-plugin
 
 ## Purpose
 
