@@ -21,13 +21,17 @@
 
 package com.spotify.docker;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.auth.RegistryAuthSupplier;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.messages.RegistryAuth;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
@@ -35,14 +39,13 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Matchers.any;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AbstractDockerMojoTest {
@@ -58,13 +61,6 @@ public class AbstractDockerMojoTest {
   private static final String EMAIL = "user@host.domain";
   private static final String AUTHORIZATION_EXCEPTION =
       "Incomplete Docker registry authorization credentials.";
-  private static final String DEFAULT_REGISTRY = "https://index.docker.io/v1/";
-
-  @Mock
-  private MavenSession session;
-
-  @Mock
-  private MojoExecution execution;
 
   @Mock
   private Settings settings;
@@ -73,7 +69,7 @@ public class AbstractDockerMojoTest {
   private DefaultDockerClient.Builder builder;
 
   @Captor
-  private ArgumentCaptor<RegistryAuth> authConfigCaptor;
+  private ArgumentCaptor<RegistryAuthSupplier> authSupplierCaptor;
 
   @InjectMocks
   private AbstractDockerMojo sut = new AbstractDockerMojo() {
@@ -200,16 +196,21 @@ public class AbstractDockerMojoTest {
     ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
 
     when(settings.getServer(SERVER_ID)).thenReturn(mockServer());
-    when(builder.registryAuth(authConfigCaptor.capture())).thenReturn(builder);
+    when(builder.registryAuthSupplier(authSupplierCaptor.capture())).thenReturn(builder);
 
     sut.execute();
 
-    final RegistryAuth authConfig = authConfigCaptor.getValue();
+    final RegistryAuthSupplier supplier = authSupplierCaptor.getValue();
+
+    // we can't inspect the supplier details itself, but we can test that the instance passed
+    // to the constructor returns our static RegistryAuth when asked for it
+    final RegistryAuth authConfig = supplier.authForBuild().configs().get(SERVER_ID);
+
     assertThat(authConfig).isNotNull();
     assertThat(authConfig.email()).isEqualTo(EMAIL);
     assertThat(authConfig.password()).isEqualTo(PASSWORD);
     assertThat(authConfig.username()).isEqualTo(USERNAME);
-    assertThat(authConfig.serverAddress()).isEqualTo(DEFAULT_REGISTRY);
+    assertThat(authConfig.serverAddress()).isEqualTo(SERVER_ID);
   }
 
   @Test
@@ -218,12 +219,19 @@ public class AbstractDockerMojoTest {
     ReflectionTestUtils.setField(sut, "registryUrl", REGISTRY_URL);
 
     when(settings.getServer(SERVER_ID)).thenReturn(mockServer());
-    when(builder.registryAuth(authConfigCaptor.capture())).thenReturn(builder);
+    when(builder.registryAuthSupplier(authSupplierCaptor.capture())).thenReturn(builder);
 
     sut.execute();
 
-    final RegistryAuth authConfig = authConfigCaptor.getValue();
+    final RegistryAuthSupplier supplier = authSupplierCaptor.getValue();
+
+    final String image = REGISTRY_URL + "/foo/bar:blah";
+    final RegistryAuth authConfig = supplier.authFor(image);
+
     assertThat(authConfig).isNotNull();
+    assertThat(authConfig.email()).isEqualTo(EMAIL);
+    assertThat(authConfig.password()).isEqualTo(PASSWORD);
+    assertThat(authConfig.username()).isEqualTo(USERNAME);
     assertThat(authConfig.serverAddress()).isEqualTo(REGISTRY_URL);
   }
 

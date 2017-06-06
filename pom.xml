@@ -4,7 +4,7 @@
 
   <groupId>com.spotify</groupId>
   <artifactId>docker-maven-plugin</artifactId>
-  <version>0.4.15-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
   <name>docker-maven-plugin</name>
   <description>A maven plugin for docker</description>
@@ -125,8 +125,13 @@
     <dependency>
       <groupId>com.spotify</groupId>
       <artifactId>docker-client</artifactId>
-      <version>8.5.0</version>
+      <version>8.7.1</version>
       <classifier>shaded</classifier>
+    </dependency>
+    <dependency>
+      <groupId>com.google.auth</groupId>
+      <artifactId>google-auth-library-oauth2-http</artifactId>
+      <version>0.6.0</version>
     </dependency>
     <dependency>
       <groupId>com.typesafe</groupId>
