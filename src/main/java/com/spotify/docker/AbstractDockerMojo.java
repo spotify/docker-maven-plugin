@@ -250,7 +250,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
    * Builds the registryAuth object from server details.
    */
   protected RegistryAuth registryAuth() throws MojoExecutionException {
-    if (settings != null) {
+    if (settings != null && serverId != null) {
       final Server server = settings.getServer(serverId);
       if (server != null) {
         final RegistryAuth.Builder registryAuthBuilder = RegistryAuth.builder();
@@ -286,6 +286,10 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         }
 
         return registryAuthBuilder.build();
+      } else {
+        // settings.xml has no entry for the configured serverId, warn the user
+        getLog().warn("No entry found in settings.xml for serverId=" + serverId
+                      + ", cannot configure authentication for that registry");
       }
     }
     return null;
