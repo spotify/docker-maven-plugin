@@ -32,7 +32,6 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.auth.RegistryAuthSupplier;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.messages.RegistryAuth;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
@@ -99,96 +98,6 @@ public class AbstractDockerMojoTest {
     verify(builder).uri(DOCKER_HOST);
     verify(builder).dockerCertificates(any(DockerCertificates.class));
 
-  }
-
-  @Test
-  public void testSettingsNoUsername() throws Exception {
-    ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
-
-    final Server server = mockServer();
-
-    server.setUsername(null);
-
-    when(settings.getServer(SERVER_ID)).thenReturn(server);
-
-    Throwable cause = null;
-
-    try {
-      sut.execute();
-    } catch (MojoExecutionException exception) {
-      cause = exception.getCause();
-    }
-
-    assertThat(cause).isNotNull().isExactlyInstanceOf(MojoExecutionException.class).
-      hasMessageStartingWith(AUTHORIZATION_EXCEPTION);
-  }
-
-  @Test
-  public void testSettingsNoPassword() throws Exception {
-    ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
-
-    final Server server = mockServer();
-
-    server.setPassword(null);
-
-    when(settings.getServer(SERVER_ID)).thenReturn(server);
-
-    Throwable cause = null;
-
-    try {
-      sut.execute();
-    } catch (MojoExecutionException exception) {
-      cause = exception.getCause();
-    }
-
-    assertThat(cause).isNotNull().isExactlyInstanceOf(MojoExecutionException.class).
-      hasMessageStartingWith(AUTHORIZATION_EXCEPTION);
-  }
-
-
-  @Test
-  public void testSettingsNoConfiguration() throws Exception {
-    ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
-
-    final Server server = mockServer();
-
-    server.setConfiguration(null);
-
-    when(settings.getServer(SERVER_ID)).thenReturn(server);
-
-    Throwable cause = null;
-
-    try {
-      sut.execute();
-    } catch (MojoExecutionException exception) {
-      cause = exception.getCause();
-    }
-
-    assertThat(cause).isNotNull().isExactlyInstanceOf(MojoExecutionException.class).
-      hasMessageStartingWith(AUTHORIZATION_EXCEPTION);
-  }
-
-
-  @Test
-  public void testSettingsNoEmail() throws Exception {
-    ReflectionTestUtils.setField(sut, "serverId", SERVER_ID);
-
-    final Server server = mockServer();
-
-    server.setConfiguration(new Xpp3Dom(CONFIGURATION_PROPERTY));
-
-    when(settings.getServer(SERVER_ID)).thenReturn(server);
-
-    Throwable cause = null;
-
-    try {
-      sut.execute();
-    } catch (MojoExecutionException exception) {
-      cause = exception.getCause();
-    }
-
-    assertThat(cause).isNotNull().isExactlyInstanceOf(MojoExecutionException.class).
-      hasMessageStartingWith(AUTHORIZATION_EXCEPTION);
   }
 
   @Test

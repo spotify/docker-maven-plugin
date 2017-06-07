@@ -213,8 +213,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
    *
    * The above <code>settings.xml</code> would return "foo@bar.com".
    *
-   * @param server {@link org.apache.maven.settings.Server}
-   * @return email string.
+   * @return email, or {@code null} if not set
    */
   private String getEmail(final Server server) {
     String email = null;
@@ -230,20 +229,6 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     }
 
     return email;
-  }
-
-  /**
-   * Checks for incomplete private Docker registry authorization settings.
-   * @param username Auth username.
-   * @param password Auth password.
-   * @param email    Auth email.
-   * @return boolean true if any of the three credentials are present but not all. False otherwise.
-   */
-  private boolean incompleteAuthSettings(final String username, final String password,
-                                         final String email) {
-    return (!isNullOrEmpty(username) || !isNullOrEmpty(password) || !isNullOrEmpty(email))
-           && (isNullOrEmpty(username) || isNullOrEmpty(password) || isNullOrEmpty(email));
-
   }
 
   /**
@@ -265,12 +250,6 @@ abstract class AbstractDockerMojo extends AbstractMojo {
           }
         }
         final String email = getEmail(server);
-
-        if (incompleteAuthSettings(username, password, email)) {
-          throw new MojoExecutionException(
-                  "Incomplete Docker registry authorization credentials. "
-                          + "Please provide all of username, password, and email or none.");
-        }
 
         if (!isNullOrEmpty(username)) {
           registryAuthBuilder.username(username);
