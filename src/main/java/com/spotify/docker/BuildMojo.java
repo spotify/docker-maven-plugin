@@ -730,6 +730,9 @@ public class BuildMojo extends AbstractDockerMojo {
 
     for (final Resource resource : resources) {
       final File source = new File(resource.getDirectory());
+      if (!source.exists()) {
+        Files.createDirectories(source.toPath());
+      }
       final List<String> includes = resource.getIncludes();
       final List<String> excludes = resource.getExcludes();
       final DirectoryScanner scanner = new DirectoryScanner();
