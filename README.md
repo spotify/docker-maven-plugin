@@ -14,7 +14,10 @@ A Maven plugin for building and pushing Docker images.
   * [Use a Dockerfile](#use-a-dockerfile)
 * [Usage](#usage)
   * [Bind Docker commands to Maven phases](#bind-docker-commands-to-maven-phases)
-  * [Authenticating with private registries](#authenticating-with-private-registries)
+  * [Using with Private Registries](#using-with-private-registries)
+  * [Authentication](#authentication)
+    * [Using encrypted passwords for authentication](#using-encrypted-passwords-for-authentication)
+* [Testing](#testing)
 * [Releasing](#releasing)
 * [Known Issues](#known-issues)
 
@@ -259,7 +262,9 @@ Then when pushing the image with either `docker:build -DpushImage` or
 `docker:push`, the docker daemon will push to `registry.example.com`.
 
 Alternatively, if you wish to use a short name in `docker:build` you can use
-`docker:tag -DpushImage` to tag the just-built image with the full registry hostname and push it. It's important to use the `pushImage` flag as using `docker:push` independently will attempt to push the original image. 
+`docker:tag -DpushImage` to tag the just-built image with the full registry
+hostname and push it. It's important to use the `pushImage` flag as using
+`docker:push` independently will attempt to push the original image.
 
 For example:
 
@@ -294,10 +299,28 @@ For example:
 </plugin>
 ```
 
-#### Authenticating with Private Registries
+### Authentication
 
-To push to a private Docker image registry that requires authentication, you can put your
-credentials in your Maven's global `settings.xml` file as part of the `<servers></servers>` block.
+Since version 1.0.0, the docker-maven-plugin will automatically use any
+authentication present in the docker-cli configuration file at `~/.dockercfg`
+or `~/.docker/config.json`, without the need to configure anything (in earlier
+versions of the plugin this behavior had to be enabled with
+`<useConfigFile>true</useConfigFile>`, but now it is always active).
+
+Additionally the plugin will enable support for Google Container Registry if it
+is able to successfully load [Google's "Application Default Credentials"][ADC].
+The plugin will also load Google credentials from the file pointed to by the
+environment variable `DOCKER_GOOGLE_CREDENTIALS` if it is defined. Since GCR
+authentication requires retrieving short-lived access codes for the given
+credentials, support for this registry is baked into the underlying
+docker-client rather than having to first populate the docker config file
+before running the plugin.
+
+[ADC]: https://developers.google.com/identity/protocols/application-default-credentials
+
+Lastly, authentication credentials can be explicitly configured in your pom.xml
+and in your Maven installation's `settings.xml` file as part of the
+`<servers></servers>` block.
 
     <servers>
       <server>
@@ -312,7 +335,6 @@ credentials in your Maven's global `settings.xml` file as part of the `<servers>
 
 Now use the server id in your project `pom.xml`.
 
-
     <plugin>
       <plugin>
         <groupId>com.spotify</groupId>
@@ -326,8 +348,8 @@ Now use the server id in your project `pom.xml`.
       </plugin>
     </plugins>
 
-`<registryUrl></registryUrl>` is optional and defaults to `https://index.docker.io/v1/` in the
-Spotify docker-client dependency.
+The plugin gives priority to any credentials in the docker-cli config file
+before explicitly configured credentials.
 
 #### Using encrypted passwords for authentication
 
@@ -341,26 +363,6 @@ Only passwords enclosed in curly braces will be considered as encrypted.
         <password>{gc4QPLrlgPwHZjAhPw8JPuGzaPitzuyjeBojwCz88j4=}</password>
       </server>
     </servers>
-
-#### Using docker config file for authentication
-
-Another option to authenticate with private repositories is using dockers ~/.docker/config.json.
-This makes it also possible to use in cooperation with cloud providers like AWS or Google Cloud which store the user's
-credentials in this file, too.
-
-    <plugin>
-      <plugin>
-        <groupId>com.spotify</groupId>
-        <artifactId>docker-maven-plugin</artifactId>
-        <version>VERSION GOES HERE</version>
-        <configuration>
-          [...]
-          <useConfigFile>true</useConfigFile>
-        </configuration>
-      </plugin>
-    </plugins>
-
-**Hint:** The build will fail, if the config file doesn't exist.
 
 ## Testing
 

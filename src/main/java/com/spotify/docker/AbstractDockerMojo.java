@@ -21,15 +21,32 @@
 
 package com.spotify.docker;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerCertificatesStore;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.auth.ConfigFileRegistryAuthSupplier;
+import com.spotify.docker.client.auth.MultiRegistryAuthSupplier;
+import com.spotify.docker.client.auth.NoOpRegistryAuthSupplier;
+import com.spotify.docker.client.auth.RegistryAuthSupplier;
+import com.spotify.docker.client.auth.gcr.ContainerRegistryAuthSupplier;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.messages.RegistryAuth;
-
-import com.google.common.base.Optional;
-
+import com.spotify.docker.client.messages.RegistryConfigs;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import javax.annotation.Nonnull;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
@@ -41,11 +58,6 @@ import org.apache.maven.settings.Settings;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
-
-import java.io.IOException;
-import java.nio.file.Paths;
-
-import static com.google.common.base.Strings.isNullOrEmpty;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
@@ -82,9 +94,6 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
   @Parameter(property = "registryUrl")
   private String registryUrl;
-
-  @Parameter(property = "useConfigFile")
-  private Boolean useConfigFile;
 
   /**
    * Number of retries for failing pushes, defaults to 5.
@@ -148,24 +157,25 @@ abstract class AbstractDockerMojo extends AbstractMojo {
       .readTimeoutMillis(0);
   }
 
-  protected DockerClient buildDockerClient()
-      throws DockerCertificateException, SecDispatcherException, MojoExecutionException {
+  protected DockerClient buildDockerClient() throws MojoExecutionException {
 
-    final DefaultDockerClient.Builder builder = getBuilder();
+    final DefaultDockerClient.Builder builder;
+    try {
+      builder = getBuilder();
 
-    final String dockerHost = rawDockerHost();
-    if (!isNullOrEmpty(dockerHost)) {
-      builder.uri(dockerHost);
-    }
-    final Optional<DockerCertificatesStore> certs = dockerCertificates();
-    if (certs.isPresent()) {
-      builder.dockerCertificates(certs.get());
+      final String dockerHost = rawDockerHost();
+      if (!isNullOrEmpty(dockerHost)) {
+        builder.uri(dockerHost);
+      }
+      final Optional<DockerCertificatesStore> certs = dockerCertificates();
+      if (certs.isPresent()) {
+        builder.dockerCertificates(certs.get());
+      }
+    } catch (DockerCertificateException ex) {
+      throw new MojoExecutionException("Cannot build DockerClient due to certificate problem", ex);
     }
 
-    final RegistryAuth registryAuth = registryAuth();
-    if (registryAuth != null) {
-      builder.registryAuth(registryAuth);
-    }
+    builder.registryAuthSupplier(authSupplier());
 
     return builder.build();
   }
@@ -238,12 +248,9 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
   /**
    * Builds the registryAuth object from server details.
-   * @return registryAuth
-   * @throws MojoExecutionException
-   * @throws SecDispatcherException
    */
-  protected RegistryAuth registryAuth() throws MojoExecutionException, SecDispatcherException {
-    if (settings != null) {
+  protected RegistryAuth registryAuth() throws MojoExecutionException {
+    if (settings != null && serverId != null) {
       final Server server = settings.getServer(serverId);
       if (server != null) {
         final RegistryAuth.Builder registryAuthBuilder = RegistryAuth.builder();
@@ -251,7 +258,11 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         final String username = server.getUsername();
         String password = server.getPassword();
         if (secDispatcher != null) {
-          password = secDispatcher.decrypt(password);
+          try {
+            password = secDispatcher.decrypt(password);
+          } catch (SecDispatcherException ex) {
+            throw new MojoExecutionException("Cannot decrypt password from settings", ex);
+          }
         }
         final String email = getEmail(server);
 
@@ -270,32 +281,117 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         if (!isNullOrEmpty(password)) {
           registryAuthBuilder.password(password);
         }
-        // registryUrl is optional.
-        // Spotify's docker-client defaults to 'https://index.docker.io/v1/'.
         if (!isNullOrEmpty(registryUrl)) {
           registryAuthBuilder.serverAddress(registryUrl);
         }
 
         return registryAuthBuilder.build();
-      } else if (useConfigFile != null && useConfigFile){
-
-          final RegistryAuth.Builder registryAuthBuilder;
-          try {
-            if (!isNullOrEmpty(registryUrl)) {
-              registryAuthBuilder = RegistryAuth.fromDockerConfig(registryUrl);
-            } else {
-              registryAuthBuilder = RegistryAuth.fromDockerConfig();
-            }
-          } catch (IOException ex){
-            throw new MojoExecutionException(
-                      "Docker config file could not be read",
-                      ex
-            );
-          }
-
-          return registryAuthBuilder.build();
+      } else {
+        // settings.xml has no entry for the configured serverId, warn the user
+        getLog().warn("No entry found in settings.xml for serverId=" + serverId
+                      + ", cannot configure authentication for that registry");
       }
     }
     return null;
+  }
+
+  private RegistryAuthSupplier authSupplier() throws MojoExecutionException {
+
+    final List<RegistryAuthSupplier> suppliers = new ArrayList<>();
+
+    // prioritize the docker config file
+    suppliers.add(new ConfigFileRegistryAuthSupplier());
+
+    // then Google Container Registry support
+    final RegistryAuthSupplier googleRegistrySupplier = googleContainerRegistryAuthSupplier();
+    if (googleRegistrySupplier != null) {
+      suppliers.add(googleRegistrySupplier);
+    }
+
+    // lastly, use any explicitly configured RegistryAuth as a catch-all
+    final RegistryAuth registryAuth = registryAuth();
+    if (registryAuth != null) {
+      final RegistryConfigs configsForBuild = RegistryConfigs.create(ImmutableMap.of(
+          serverIdFor(registryAuth), registryAuth
+      ));
+      suppliers.add(new NoOpRegistryAuthSupplier(registryAuth, configsForBuild));
+    }
+
+    getLog().info("Using authentication suppliers: " +
+                  Lists.transform(suppliers, new SupplierToClassNameFunction()));
+
+    return new MultiRegistryAuthSupplier(suppliers);
+  }
+
+  private String serverIdFor(RegistryAuth registryAuth) {
+    if (serverId != null) {
+      return serverId;
+    }
+    if (registryAuth.serverAddress() != null) {
+      return registryAuth.serverAddress();
+    }
+    return "index.docker.io";
+  }
+
+  /**
+   * Attempt to load a GCR compatible RegistryAuthSupplier based on a few conditions:
+   * <ol>
+   * <li>First check to see if the environemnt variable DOCKER_GOOGLE_CREDENTIALS is set and points
+   * to a readable file</li>
+   * <li>Otherwise check if the Google Application Default Credentials can be loaded</li>
+   * </ol>
+   * Note that we use a special environment variable of our own in addition to any environment
+   * variable that the ADC loading uses (GOOGLE_APPLICATION_CREDENTIALS) in case there is a need for
+   * the user to use the latter env var for some other purpose in their build.
+   *
+   * @return a GCR RegistryAuthSupplier, or null
+   * @throws MojoExecutionException if an IOException occurs while loading the explicitly-requested
+   *                                credentials
+   */
+  private RegistryAuthSupplier googleContainerRegistryAuthSupplier() throws MojoExecutionException {
+    GoogleCredentials credentials = null;
+
+    final String googleCredentialsPath = System.getenv("DOCKER_GOOGLE_CREDENTIALS");
+    if (googleCredentialsPath != null) {
+      final File file = new File(googleCredentialsPath);
+      if (file.exists()) {
+        try {
+          try (FileInputStream inputStream = new FileInputStream(file)) {
+            credentials = GoogleCredentials.fromStream(inputStream);
+            getLog().info("Using Google credentials from file: " + file.getAbsolutePath());
+          }
+        } catch (IOException ex) {
+          throw new MojoExecutionException("Cannot load credentials referenced by "
+                                           + "DOCKER_GOOGLE_CREDENTIALS environment variable", ex);
+        }
+      }
+    }
+
+    // use the ADC last
+    if (credentials == null) {
+      try {
+        credentials = GoogleCredentials.getApplicationDefault();
+        getLog().info("Using Google application default credentials");
+      } catch (IOException ex) {
+        // No GCP default credentials available
+        getLog().debug("Failed to load Google application default credentials", ex);
+      }
+    }
+
+    if (credentials == null) {
+      return null;
+    }
+
+    return ContainerRegistryAuthSupplier.forCredentials(credentials).build();
+  }
+
+  private static class SupplierToClassNameFunction
+      implements Function<RegistryAuthSupplier, String> {
+
+    @Override
+    @Nonnull
+    public String apply(@Nonnull final RegistryAuthSupplier input) {
+      return input.getClass().getSimpleName();
+    }
   }
 }
