@@ -2,26 +2,15 @@
 [![Travis CI](https://travis-ci.org/spotify/docker-maven-plugin.svg?branch=master)](https://travis-ci.org/spotify/docker-maven-plugin/) 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.spotify/docker-maven-plugin/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.spotify/docker-maven-plugin/)
 
-
 A Maven plugin for building and pushing Docker images.
 
-### We recommend that new projects use [dockerfile-maven][]. See below for more details.
+## Status: bug-fix only
 
-* [The future of docker-maven-plugin](#the-future-of-docker-maven-plugin)
-* [Purpose](#purpose)
-* [Setup](#setup)
-  * [Specify build info in the POM](#specify-build-info-in-the-pom)
-  * [Use a Dockerfile](#use-a-dockerfile)
-* [Usage](#usage)
-  * [Bind Docker commands to Maven phases](#bind-docker-commands-to-maven-phases)
-  * [Using with Private Registries](#using-with-private-registries)
-  * [Authentication](#authentication)
-    * [Using encrypted passwords for authentication](#using-encrypted-passwords-for-authentication)
-* [Testing](#testing)
-* [Releasing](#releasing)
-* [Known Issues](#known-issues)
+**We recommend that new projects use [dockerfile-maven][].**
+This project will no longer have new features or accept PRs for new features.
+We will continue to accept bug fixes, however.
 
-## The future of docker-maven-plugin
+### The future of docker-maven-plugin
 
 This plugin was the initial Maven plugin used at Spotify for building Docker
 images out of Java services. It was initially created in 2014 when we first
@@ -42,12 +31,22 @@ This led to the creation of a second Maven plugin for building docker images,
 with Docker from Maven, for all of the reasons outlined in dockerfile-maven's
 README.
 
-**We recommend that new projects use [dockerfile-maven][].**
-
-We are still happy to review new contributions to `docker-maven-plugin`, but we
-do not plan on making major new contributions ourselves in the future.
 
 [dockerfile-maven]: https://github.com/spotify/dockerfile-maven
+* [The future of docker-maven-plugin](#the-future-of-docker-maven-plugin)
+* [Purpose](#purpose)
+* [Setup](#setup)
+  * [Specify build info in the POM](#specify-build-info-in-the-pom)
+  * [Use a Dockerfile](#use-a-dockerfile)
+* [Usage](#usage)
+  * [Bind Docker commands to Maven phases](#bind-docker-commands-to-maven-phases)
+  * [Using with Private Registries](#using-with-private-registries)
+  * [Authentication](#authentication)
+    * [Using encrypted passwords for authentication](#using-encrypted-passwords-for-authentication)
+* [Testing](#testing)
+* [Releasing](#releasing)
+* [Known Issues](#known-issues)
+
 
 ## Purpose
 
