@@ -49,6 +49,7 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
 import org.codehaus.plexus.util.DirectoryScanner;
 import org.codehaus.plexus.util.FileUtils;
+import org.codehaus.plexus.util.StringUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.File;
@@ -61,10 +62,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -618,7 +616,8 @@ public class BuildMojo extends AbstractDockerMojo {
     for (final String file : filesToAdd) {
       // The dollar sign in files has to be escaped because docker interprets it as variable
       commands.add(
-              String.format("ADD %s %s", file.replaceAll("\\$", "\\\\\\$"), normalizeDest(file)));
+              String.format("ADD %s %s", file.replaceAll("\\$", "\\\\\\$"),
+                      normalizeDest(file).replaceAll("\\$", "\\\\\\$")));
     }
 
     if (runList != null && !runList.isEmpty()) {
@@ -709,7 +708,8 @@ public class BuildMojo extends AbstractDockerMojo {
     // need to know the path relative to destination to test if it is a file or directory,
     // but only remove the last part of the path if there is a parent (i.e. don't remove a
     // parent path segment from "file.txt")
-    if (new File(getDestination(), filePath).isFile()) {
+    if (new File(getDestination(), filePath).isFile()
+            && isArchive(filePath)) {
       if (file.getParent() != null) {
         // remove file part of path
         dest = separatorsToUnix(file.getParent()) + "/";
@@ -722,6 +722,19 @@ public class BuildMojo extends AbstractDockerMojo {
     }
 
     return dest;
+  }
+
+  private static final Set<String> archiveSuffixes =
+          new HashSet<>(Arrays.asList(".tar", ".tar.gz"));
+
+  private boolean isArchive(String filePath) {
+    filePath = filePath.toLowerCase(Locale.getDefault());
+    for (final String suffix : archiveSuffixes) {
+      if (filePath.endsWith(suffix)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private List<String> copyResources(String destination) throws IOException {
@@ -761,6 +774,15 @@ public class BuildMojo extends AbstractDockerMojo {
 
         Files.createDirectories(destPath);
         FileUtils.copyDirectoryStructure(source, destPath.toFile());
+        copiedPaths.add(separatorsToUnix(targetPath));
+      } else if (includedFiles.length == 1
+              && StringUtils.isNotBlank(targetPath)
+              && !targetPath.endsWith("/")) {
+        final Path sourcePath = Paths.get(resource.getDirectory()).resolve(includedFiles[0]);
+        final Path destPath = Paths.get(destination, targetPath);
+        getLog().info(String.format("Copying single file %s -> %s", source, destPath));
+        Files.createDirectories(destPath.getParent());
+        FileUtils.copyFile(sourcePath.toFile(), destPath.toFile());
         copiedPaths.add(separatorsToUnix(targetPath));
       } else {
         for (final String included : includedFiles) {
