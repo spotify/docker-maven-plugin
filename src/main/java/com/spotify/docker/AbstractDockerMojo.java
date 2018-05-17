@@ -25,7 +25,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.base.Function;
-import com.spotify.docker.client.shaded.com.google.common.base.Optional;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.spotify.docker.client.DefaultDockerClient;
@@ -33,8 +33,8 @@ import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerCertificatesStore;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.auth.ConfigFileRegistryAuthSupplier;
-import com.spotify.docker.client.auth.MultiRegistryAuthSupplier;
 import com.spotify.docker.client.auth.FixedRegistryAuthSupplier;
+import com.spotify.docker.client.auth.MultiRegistryAuthSupplier;
 import com.spotify.docker.client.auth.RegistryAuthSupplier;
 import com.spotify.docker.client.auth.gcr.ContainerRegistryAuthSupplier;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
