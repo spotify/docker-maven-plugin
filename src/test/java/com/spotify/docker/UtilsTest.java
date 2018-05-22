@@ -96,7 +96,7 @@ public class UtilsTest {
     final DockerClient dockerClient = mock(DockerClient.class);
     final Log log = mock(Log.class);
     final DockerBuildInformation buildInfo = mock(DockerBuildInformation.class);
-    Utils.pushImage(dockerClient, IMAGE, log, buildInfo, 0, 1, false);
+    Utils.pushImage(dockerClient, IMAGE, null, log, buildInfo, 0, 1, false);
 
     verify(dockerClient).push(eq(IMAGE), any(AnsiProgressHandler.class));
   }

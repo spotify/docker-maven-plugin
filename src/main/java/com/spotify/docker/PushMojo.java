@@ -24,6 +24,7 @@ package com.spotify.docker;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 
+import java.util.List;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -42,12 +43,17 @@ public class PushMojo extends AbstractDockerMojo {
   @Parameter(property = "imageName", required = true)
   private String imageName;
 
+  /** Additional tags to tag the image with. */
+  @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
+  @Parameter(property = "dockerImageTags")
+  private List<String> imageTags;
+
   @Override
   protected void execute(DockerClient docker)
       throws MojoExecutionException, DockerException, IOException, InterruptedException {
 
-    pushImage(docker, imageName, getLog(), null, getRetryPushCount(), getRetryPushTimeout(),
-        isSkipDockerPush());
+    pushImage(docker, imageName, imageTags, getLog(), null, getRetryPushCount(),
+        getRetryPushTimeout(), isSkipDockerPush());
   }
 
 }
