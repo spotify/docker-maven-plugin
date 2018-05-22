@@ -70,10 +70,12 @@ public class Utils {
     return new String[] { repo, tag };
   }
 
-  public static void pushImage(DockerClient docker, String imageName, Log log,
+  public static void pushImage(final DockerClient docker, final String imageName,
+                               final List<String> imageTags, final Log log,
                                final DockerBuildInformation buildInfo,
-                               int retryPushCount, int retryPushTimeout, boolean skipPush)
-          throws MojoExecutionException, DockerException, IOException, InterruptedException {
+                               final int retryPushCount, final int retryPushTimeout,
+                               final boolean skipPush)
+          throws MojoExecutionException, DockerException, InterruptedException {
 
     if (skipPush) {
       log.info("Skipping docker push");
@@ -89,16 +91,23 @@ public class Utils {
       try {
         log.info("Pushing " + imageName);
         docker.push(imageName, handler);
+
+        if (imageTags != null) {
+          final String imageNameNoTag = getImageNameWithNoTag(imageName);
+          for (final String imageTag : imageTags) {
+            final String imageNameAndTag = imageNameNoTag + ":" + imageTag;
+            log.info("Pushing " + imageNameAndTag);
+            docker.push(imageNameAndTag, new AnsiProgressHandler());
+          }
+        }
+
         // A concurrent push raises a generic DockerException and not
         // the more logical ImagePushFailedException. Hence the rather
         // wide catch clause.
       } catch (DockerException e) {
         if (attempt < retryPushCount) {
-          log.warn(String.format(PUSH_FAIL_WARN_TEMPLATE
-                  , imageName
-                  , retryPushTimeout / 1000
-                  , attempt + 1
-                  , retryPushCount));
+          log.warn(String.format(PUSH_FAIL_WARN_TEMPLATE, imageName, retryPushTimeout / 1000,
+              attempt + 1, retryPushCount));
           sleep(retryPushTimeout);
           continue;
         } else {
@@ -111,6 +120,14 @@ public class Utils {
       }
       break;
     } while (attempt++ <= retryPushCount);
+  }
+
+  private static String getImageNameWithNoTag(String imageName) {
+    final int tagSeparatorIndex = imageName.lastIndexOf(':');
+    if (tagSeparatorIndex >= 0) {
+      imageName = imageName.substring(0, tagSeparatorIndex);
+    }
+    return imageName;
   }
 
   // push just the tags listed in the pom rather than all images using imageName
