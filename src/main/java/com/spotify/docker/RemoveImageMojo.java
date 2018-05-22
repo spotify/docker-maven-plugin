@@ -31,7 +31,6 @@ import com.spotify.docker.client.exceptions.ImageNotFoundException;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.RemovedImage;
 import com.spotify.docker.client.shaded.javax.ws.rs.NotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
