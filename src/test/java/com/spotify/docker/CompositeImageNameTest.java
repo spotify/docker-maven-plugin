@@ -26,8 +26,10 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.*;
@@ -65,6 +67,31 @@ public class CompositeImageNameTest {
   }
 
   @Test
+  public void testImageWithRegistryHostnameAndPortWithoutTag() throws MojoExecutionException {
+    final List<String> imageTags = Collections.singletonList("tag1");
+    final String imageNameWithRegistry = "registry:8888/imageName";
+    final CompositeImageName
+            compositeImageName = CompositeImageName.create(imageNameWithRegistry, imageTags);
+
+    assertEquals(imageNameWithRegistry, compositeImageName.getName());
+    assertEquals(1, compositeImageName.getImageTags().size());
+    assertEquals("tag1", compositeImageName.getImageTags().get(0));
+  }
+
+  @Test
+  public void testImageWithRegistryHostnameAndPortWithTag() throws MojoExecutionException {
+    final List<String> imageTags = Collections.singletonList("tag2");
+    final String imageNameWithRegistryAndTag = "registry:8888/imageName:tag1";
+    final CompositeImageName
+            compositeImageName = CompositeImageName.create(imageNameWithRegistryAndTag, imageTags);
+
+    assertEquals("registry:8888/imageName", compositeImageName.getName());
+    assertEquals(2, compositeImageName.getImageTags().size());
+    assertEquals("tag1", compositeImageName.getImageTags().get(0));
+    assertEquals("tag2", compositeImageName.getImageTags().get(1));
+  }
+
+  @Test
   public void testInvalidCompositeImageNameAndTagCombinations() throws MojoExecutionException {
     final String noImageNameErrorMessage = "imageName not set";
     final String noImageTagsErrorMessage = "no imageTags set";
@@ -83,6 +110,17 @@ public class CompositeImageNameTest {
 
     compositeImageNameExpectsException(noImageTagsErrorMessage, "imageName", null);
     compositeImageNameExpectsException(noImageTagsErrorMessage, "imageName", emtpy);
+  }
+
+  @Test
+  public void testContainsTag() {
+    assertTrue(CompositeImageName.containsTag("imageName:tag"));
+    assertTrue(CompositeImageName.containsTag("registry/imageName:tag"));
+    assertTrue(CompositeImageName.containsTag("registry:8888/imageName:tag"));
+
+    assertFalse(CompositeImageName.containsTag("imageName"));
+    assertFalse(CompositeImageName.containsTag("registry/imageName"));
+    assertFalse(CompositeImageName.containsTag("registry:8888/imageName"));
   }
 
   private void compositeImageNameExpectsException(final String message,
