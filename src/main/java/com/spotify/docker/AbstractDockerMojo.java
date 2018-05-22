@@ -25,7 +25,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.spotify.docker.client.DefaultDockerClient;
@@ -33,13 +32,14 @@ import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerCertificatesStore;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.auth.ConfigFileRegistryAuthSupplier;
+import com.spotify.docker.client.auth.FixedRegistryAuthSupplier;
 import com.spotify.docker.client.auth.MultiRegistryAuthSupplier;
-import com.spotify.docker.client.auth.NoOpRegistryAuthSupplier;
 import com.spotify.docker.client.auth.RegistryAuthSupplier;
 import com.spotify.docker.client.auth.gcr.ContainerRegistryAuthSupplier;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.messages.RegistryAuth;
 import com.spotify.docker.client.messages.RegistryConfigs;
+import com.spotify.docker.client.shaded.com.google.common.base.Optional;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -293,7 +293,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
       final RegistryConfigs configsForBuild = RegistryConfigs.create(ImmutableMap.of(
           serverIdFor(registryAuth), registryAuth
       ));
-      suppliers.add(new NoOpRegistryAuthSupplier(registryAuth, configsForBuild));
+      suppliers.add(new FixedRegistryAuthSupplier(registryAuth, configsForBuild));
     }
 
     getLog().info("Using authentication suppliers: " +
