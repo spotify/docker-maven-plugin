@@ -32,7 +32,9 @@ import com.spotify.docker.client.messages.RemovedImage;
 import com.spotify.docker.client.shaded.javax.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -86,7 +88,8 @@ public class RemoveImageMojo extends AbstractDockerMojo {
     }
     imageTags.add(imageNameParts[1]);
 
-    for (final String imageTag : imageTags) {
+    final Set<String> uniqueImageTags = new HashSet<>(imageTags);
+    for (final String imageTag : uniqueImageTags) {
       final String currImageName =
           imageNameParts[0] + ((isNullOrEmpty(imageTag)) ? "" : (":" + imageTag));
       getLog().info("Removing -f " + currImageName);
