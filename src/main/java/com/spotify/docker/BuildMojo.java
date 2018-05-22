@@ -258,6 +258,12 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(property = "dockerBuildArgs")
   private Map<String, String> buildArgs;  
   
+  /** HEALTHCHECK. It expects a element for 'options' and 'cmd' 
+   * Added in docker 1.12 (https://docs.docker.com/engine/reference/builder/#/healthcheck). 
+   */
+  @Parameter(property = "healthcheck")
+  private Map<String, String> healthcheck;
+
   private PluginParameterExpressionEvaluator expressionEvaluator;
 
   public BuildMojo() {
@@ -647,6 +653,17 @@ public class BuildMojo extends AbstractDockerMojo {
           commands.add("RUN " + run);
         }
       }
+    }
+
+    if (healthcheck != null && healthcheck.containsKey("cmd")) {
+      final StringBuffer healthcheckBuffer = new StringBuffer("HEALTHCHECK ");
+      if (healthcheck.containsKey("options")) {
+        healthcheckBuffer.append(healthcheck.get("options"));
+        healthcheckBuffer.append(" ");
+      }
+      healthcheckBuffer.append("CMD ");
+      healthcheckBuffer.append(healthcheck.get("cmd"));
+      commands.add(healthcheckBuffer.toString());
     }
 
     if (exposesSet.size() > 0) {

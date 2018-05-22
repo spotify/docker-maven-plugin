@@ -78,6 +78,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       "ADD copy2.json .",
       "RUN ln -s /a /b",
       "RUN wget 127.0.0.1:8080",
+      "HEALTHCHECK --interval=30s CMD curl --fail http://localhost:8080/ || exit 1",
       "EXPOSE 8080 8081",
       "USER app",
       "ENTRYPOINT date",
