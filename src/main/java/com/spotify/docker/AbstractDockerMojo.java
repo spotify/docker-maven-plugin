@@ -33,8 +33,8 @@ import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerCertificatesStore;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.auth.ConfigFileRegistryAuthSupplier;
+import com.spotify.docker.client.auth.FixedRegistryAuthSupplier;
 import com.spotify.docker.client.auth.MultiRegistryAuthSupplier;
-import com.spotify.docker.client.auth.NoOpRegistryAuthSupplier;
 import com.spotify.docker.client.auth.RegistryAuthSupplier;
 import com.spotify.docker.client.auth.gcr.ContainerRegistryAuthSupplier;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
@@ -293,7 +293,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
       final RegistryConfigs configsForBuild = RegistryConfigs.create(ImmutableMap.of(
           serverIdFor(registryAuth), registryAuth
       ));
-      suppliers.add(new NoOpRegistryAuthSupplier(registryAuth, configsForBuild));
+      suppliers.add(new FixedRegistryAuthSupplier(registryAuth, configsForBuild));
     }
 
     getLog().info("Using authentication suppliers: " +
