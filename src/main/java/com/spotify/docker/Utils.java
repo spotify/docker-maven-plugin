@@ -124,8 +124,8 @@ public class Utils {
     }
     // tags should not be empty if you have specified the option to push tags
     if (imageTags.isEmpty()) {
-      throw new MojoExecutionException("You have used option \"pushImageTag\" but have"
-                                       + " not specified an \"imageTag\" in your"
+      throw new MojoExecutionException("You have used option \"pushImageTag\" or goal \"push-tags\""
+                                       + " but have not specified an \"imageTag\" in your"
                                        + " docker-maven-client's plugin configuration");
     }
     final CompositeImageName compositeImageName = CompositeImageName.create(imageName, imageTags);

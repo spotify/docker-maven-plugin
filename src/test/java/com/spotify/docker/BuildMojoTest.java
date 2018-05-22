@@ -360,7 +360,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       mojo.execute(docker);
       fail("mojo should have thrown exception because imageTags are not defined in pom");
     } catch (MojoExecutionException e) {
-      final String message = "You have used option \"pushImageTag\" but have"
+      final String message = "You have used option \"pushImageTag\" or goal \"push-tags\" but have"
                              + " not specified an \"imageTag\" in your"
                              + " docker-maven-client's plugin configuration";
       assertTrue(String.format("Exception message should have contained '%s'", message),
@@ -395,7 +395,7 @@ public class BuildMojoTest extends AbstractMojoTestCase {
       mojo.execute(docker);
       fail("mojo should have thrown exception because imageTag is not defined in pom");
     } catch (MojoExecutionException e) {
-      final String message = "You have used option \"pushImageTag\" but have"
+      final String message = "You have used option \"pushImageTag\" or goal \"push-tags\" but have"
                               + " not specified an \"imageTag\" in your"
                               + " docker-maven-client's plugin configuration";
       assertTrue(String.format("Exception message should have contained '%s'", message),
