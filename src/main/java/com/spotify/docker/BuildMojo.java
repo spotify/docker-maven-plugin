@@ -296,14 +296,14 @@ public class BuildMojo extends AbstractDockerMojo {
       return true;
     }
 
-    String packaging = session.getCurrentProject().getPackaging();
+    final String packaging = session.getCurrentProject().getPackaging();
     if ("pom".equalsIgnoreCase(packaging)) {
       getLog().info("Project packaging is " + packaging);
       return true;
     }
 
     if (dockerDirectory != null) {
-      Path path = Paths.get(dockerDirectory, "Dockerfile");
+      final Path path = Paths.get(dockerDirectory, "Dockerfile");
       if (!path.toFile().exists()) {
         getLog().info("No Dockerfile in dockerDirectory");
         return true;
@@ -318,15 +318,11 @@ public class BuildMojo extends AbstractDockerMojo {
   }
 
   @Override
-  public void execute() throws MojoExecutionException
-  {
-    try
-    {
+  public void execute() throws MojoExecutionException {
+    try {
       LOCK.lock();
       super.execute();
-    }
-    finally
-    {
+    } finally {
       LOCK.unlock();
     }
   }
