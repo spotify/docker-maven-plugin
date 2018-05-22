@@ -20,3 +20,9 @@ bin
 
 # Mac OS X Finder
 .DS_Store
+
+### Eclipse ###
+.settings/
+.classpath
+.project
+
