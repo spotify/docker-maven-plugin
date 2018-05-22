@@ -52,14 +52,12 @@ public class AbstractDockerMojoTest {
   private static final String DOCKER_HOST = "testhost";
   private static final String DOCKER_CERT_PATH = "src/test/resources/certs";
   private static final String SERVER_ID = "testId";
-  private static final String REGISTRY_URL = "https://my.docker.reg";
+  private static final String REGISTRY_URL = "my.docker.reg";
   private static final String USERNAME = "username";
   private static final String PASSWORD = "password";
   private static final String CONFIGURATION_PROPERTY = "configuration";
   private static final String EMAIL_PROPERTY = "email";
   private static final String EMAIL = "user@host.domain";
-  private static final String AUTHORIZATION_EXCEPTION =
-      "Incomplete Docker registry authorization credentials.";
 
   @Mock
   private Settings settings;
