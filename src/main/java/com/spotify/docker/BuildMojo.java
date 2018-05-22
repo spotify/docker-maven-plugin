@@ -289,6 +289,29 @@ public class BuildMojo extends AbstractDockerMojo {
   public boolean getForceTags() {
     return forceTags;
   }
+  
+  private boolean weShouldSkipDockerBuild() {
+    if (skipDockerBuild) {
+      getLog().info("Property skipDockerBuild is set");
+      return true;
+    }
+
+    String packaging = session.getCurrentProject().getPackaging();
+    if ("pom".equalsIgnoreCase(packaging)) {
+      getLog().info("Project packaging is " + packaging);
+      return true;
+    }
+
+    if (dockerDirectory != null) {
+      Path path = Paths.get(dockerDirectory, "Dockerfile");
+      if (!path.toFile().exists()) {
+        getLog().info("No Dockerfile in dockerDirectory");
+        return true;
+      }
+    }
+
+    return false;
+  }
 
   public boolean isSkipDockerBuild() {
     return skipDockerBuild;
@@ -313,7 +336,7 @@ public class BuildMojo extends AbstractDockerMojo {
       throws MojoExecutionException, GitAPIException, IOException, DockerException,
              InterruptedException {
 
-    if (skipDockerBuild) {
+    if (weShouldSkipDockerBuild()) {
       getLog().info("Skipping docker build");
       return;
     }
