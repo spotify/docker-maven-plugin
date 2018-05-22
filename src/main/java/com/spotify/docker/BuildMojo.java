@@ -86,7 +86,7 @@ import static java.util.Collections.emptyList;
 /**
  * Used to build docker images.
  */
-@Mojo(name = "build")
+@Mojo(name = "build", threadSafe = true)
 public class BuildMojo extends AbstractDockerMojo {
 
   private static final Lock LOCK = new ReentrantLock();
