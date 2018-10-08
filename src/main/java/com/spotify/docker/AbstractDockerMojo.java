@@ -199,7 +199,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
   /**
    * Get the email from the server configuration in <code>~/.m2/settings.xml</code>.
    *
-   * <pre>
+   * <pre>{@code
    * <servers>
    *   <server>
    *     <id>my-private-docker-registry</id>
@@ -209,10 +209,10 @@ abstract class AbstractDockerMojo extends AbstractMojo {
    *     </configuration>
    *   </server>
    * </servers>
-   * </pre>
+   * }</pre>
    *
    * The above <code>settings.xml</code> would return "foo@bar.com".
-   *
+   * @param server {@link Server}
    * @return email, or {@code null} if not set
    */
   private String getEmail(final Server server) {
@@ -233,6 +233,8 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
   /**
    * Builds the registryAuth object from server details.
+   * @return {@link RegistryAuth}
+   * @throws MojoExecutionException
    */
   protected RegistryAuth registryAuth() throws MojoExecutionException {
     if (settings != null && serverId != null) {

@@ -6,7 +6,10 @@ services:
 language: java
 
 jdk:
-  - oraclejdk8
+  - openjdk8
+  - openjdk9
+  - openjdk10
+  - openjdk11
 
 env:
   global:

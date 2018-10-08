@@ -213,9 +213,9 @@ public class BuildMojo extends AbstractDockerMojo {
 
   /**
    * If specified as true, a tag will be generated consisting of the first 7 characters of the most
-   * recent git commit ID, resulting in something like <tt>image:df8e8e6</tt>. If there are any
+   * recent git commit ID, resulting in something like {@code image:df8e8e6}. If there are any
    * changes not yet committed, the string '.DIRTY' will be appended to the end. Note, if a tag is
-   * explicitly specified in the <tt>newName</tt> parameter, this flag will be ignored.
+   * explicitly specified in the {@code newName} parameter, this flag will be ignored.
    */
   @Parameter(property = "useGitCommitId", defaultValue = "false")
   private boolean useGitCommitId;
@@ -223,10 +223,10 @@ public class BuildMojo extends AbstractDockerMojo {
   /**
    * Resources to include in the build. Specify resources by using the standard resource elements as
    * defined in the <a href="http://maven.apache.org/pom.html#Resources">resources</a> section in
-   * the pom reference. If dockerDirectory is not set, the <tt>targetPath</tt> value is the location
-   * in the container where the resource should be copied to. The value is relative to '<tt>/</tt>'
-   * in the container, and defaults to '<tt>.</tt>'. If dockerDirectory is set, <tt>targetPath</tt>
-   * is relative to the dockerDirectory, and defaults to '<tt>.</tt>'. In that case, the Dockerfile
+   * the pom reference. If dockerDirectory is not set, the {@code targetPath} value is the location
+   * in the container where the resource should be copied to. The value is relative to '{@code /}'
+   * in the container, and defaults to '{@code .}'. If dockerDirectory is set, {@code targetPath}
+   * is relative to the dockerDirectory, and defaults to '{@code .}'. In that case, the Dockerfile
    * can copy the resources into the container using the ADD instruction.
    */
   @Parameter(property = "dockerResources")
