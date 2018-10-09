@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0 (release TBD)
+## 1.2.0 (released 2018-10-09)
 
 * Support Java 9, 10, and 11.
 * Fix an ExceptionInInitializerError when plugin is used on Java 11 ([401][])
