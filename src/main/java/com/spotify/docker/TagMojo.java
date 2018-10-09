@@ -38,7 +38,7 @@ import static com.spotify.docker.Utils.pushImage;
 import static com.spotify.docker.Utils.writeImageInfoFile;
 
 /**
- * Applies a tag to a docker image. Optionally, <tt>useGitCommitId</tt> can be used to generate a
+ * Applies a tag to a docker image. Optionally, {@code useGitCommitId} can be used to generate a
  * tag consisting of the first 7 characters of the most recent git commit ID.
  */
 @Mojo(name = "tag")
@@ -61,7 +61,7 @@ public class TagMojo extends AbstractDockerMojo {
   /**
    * The new name that will be applied to the source image. If a tag is not specified, the docker
    * daemon will automatically apply the tag 'latest' to the specified repo. Only a repo without a
-   * tag should be specified if <tt>useGitCommitId</tt> is set to true.
+   * tag should be specified if {@code useGitCommitId} is set to true.
    */
   @Parameter(property = "newName", required = true)
   private String newName;
@@ -80,9 +80,9 @@ public class TagMojo extends AbstractDockerMojo {
 
   /**
    * If specified as true, a tag will be generated consisting of the first 7 characters of the most
-   * recent git commit ID, resulting in something like <tt>image:df8e8e6</tt>. If there are any
+   * recent git commit ID, resulting in something like {@code image:df8e8e6}. If there are any
    * changes not yet committed, the string '.DIRTY' will be appended to the end. Note, if a tag is
-   * explicitly specified in the <tt>newName</tt> parameter, this flag will be ignored.
+   * explicitly specified in the {@code newName} parameter, this flag will be ignored.
    */
   @Parameter(property = "useGitCommitId", defaultValue = "false")
   private boolean useGitCommitId;
