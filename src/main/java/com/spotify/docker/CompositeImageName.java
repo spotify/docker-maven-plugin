@@ -41,9 +41,14 @@ class CompositeImageName {
   }
 
   /**
-   * An image name can be a plain image name or in the composite format &lt;name&gt;:&lt;tag&gt and
+   * An image name can be a plain image name or in the composite format &lt;name&gt;:&lt;tag&gt; and
    * this factory method makes sure that we get the plain image name as well as all the desired tags
    * for an image, including any composite tag.
+   *
+   * @param imageName Image name.
+   * @param imageTags List of image tags.
+   * @return {@link CompositeImageName}
+   * @throws MojoExecutionException
    */
   static CompositeImageName create(final String imageName, final List<String> imageTags)
       throws MojoExecutionException {

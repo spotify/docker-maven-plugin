@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 (released 2018-10-09)
+
+* Support Java 9, 10, and 11.
+* Fix an ExceptionInInitializerError when plugin is used on Java 11 ([401][])
+
+  [401]: https://github.com/spotify/docker-maven-plugin/issues/401
+
 ## 1.0.0
 
 ### Revamped authentication support
