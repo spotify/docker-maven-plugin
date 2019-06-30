@@ -1,14 +1,14 @@
 # docker-maven-plugin
-[![Travis CI](https://travis-ci.org/spotify/docker-maven-plugin.svg?branch=master)](https://travis-ci.org/spotify/docker-maven-plugin/) 
+[![Build Status](https://travis-ci.com/spotify/docker-maven-plugin.svg?branch=master)](https://travis-ci.com/spotify/docker-maven-plugin)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.spotify/docker-maven-plugin/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.spotify/docker-maven-plugin/)
+[![License](https://img.shields.io/github/license/spotify/dockerfile-maven.svg)](LICENSE)
+
 
 A Maven plugin for building and pushing Docker images.
 
-## Status: bug-fix only
+## Status: inactive
 
-**We recommend that new projects use [dockerfile-maven][].**
-This project will no longer have new features or accept PRs for new features.
-We will continue to accept bug fixes, however.
+**We recommend you use [dockerfile-maven][] instead.**
 
 ### The future of docker-maven-plugin
 
