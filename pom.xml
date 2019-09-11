@@ -304,7 +304,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>3.0.5</version>
         <configuration>
           <effort>Max</effort>
           <threshold>Low</threshold>
@@ -312,7 +312,7 @@
           <findbugsXmlOutputDirectory>${project.build.directory}/findbugs
           </findbugsXmlOutputDirectory>
           <excludeFilterFile>${project.basedir}/findbugs-exclude.xml</excludeFilterFile>
-  </configuration>
+        </configuration>
         <dependencies>
 	  <dependency>
 	    <groupId>org.apache.ant</groupId>
