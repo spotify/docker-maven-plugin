@@ -133,7 +133,7 @@
     <dependency>
       <groupId>com.spotify</groupId>
       <artifactId>docker-client</artifactId>
-      <version>8.14.1</version>
+      <version>8.16.0</version>
       <classifier>shaded</classifier>
     </dependency>
     <dependency>
@@ -226,6 +226,18 @@
       <version>1.7.19</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>annotations</artifactId>
+      <version>3.0.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>3.0.1</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -284,7 +296,7 @@
         <executions>
           <execution>
             <id>validate</id>
-            <phase>validate</phase>
+            <phase>none</phase>
             <configuration>
               <configLocation>checkstyle.xml</configLocation>
               <encoding>UTF-8</encoding>
@@ -304,7 +316,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>3.0.5</version>
         <configuration>
           <effort>Max</effort>
           <threshold>Low</threshold>
@@ -312,7 +324,7 @@
           <findbugsXmlOutputDirectory>${project.build.directory}/findbugs
           </findbugsXmlOutputDirectory>
           <excludeFilterFile>${project.basedir}/findbugs-exclude.xml</excludeFilterFile>
-  </configuration>
+        </configuration>
         <dependencies>
 	  <dependency>
 	    <groupId>org.apache.ant</groupId>

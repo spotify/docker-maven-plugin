@@ -26,6 +26,7 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.ProgressHandler;
 import com.spotify.docker.client.messages.ProgressMessage;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
@@ -162,6 +163,7 @@ public class Utils {
       java.nio.file.Files.copy(is, tarArchivePath, StandardCopyOption.REPLACE_EXISTING);
   }
 
+  @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
   public static void writeImageInfoFile(final DockerBuildInformation buildInfo,
                                         final String tagInfoFile) throws IOException {
     final Path imageInfoPath = Paths.get(tagInfoFile);

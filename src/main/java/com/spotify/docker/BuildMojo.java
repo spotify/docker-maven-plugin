@@ -39,6 +39,7 @@ import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -778,6 +779,7 @@ public class BuildMojo extends AbstractDockerMojo {
     return dest;
   }
 
+  @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
   private List<String> copyResources(String destination) throws IOException {
 
     final List<String> allCopiedPaths = newArrayList();
