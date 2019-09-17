@@ -42,7 +42,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 /**
  * Removes a docker image.
  */
-@Mojo(name = "removeImage")
+@Mojo(name = "removeImage", threadSafe = true)
 public class RemoveImageMojo extends AbstractDockerMojo {
 
   /**

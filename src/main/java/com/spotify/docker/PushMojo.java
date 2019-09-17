@@ -36,7 +36,7 @@ import static com.spotify.docker.Utils.pushImage;
 /**
  * Pushes a docker image repository to the specified docker registry.
  */
-@Mojo(name = "push")
+@Mojo(name = "push", threadSafe = true)
 public class PushMojo extends AbstractDockerMojo {
 
   /** Name of image to push. */

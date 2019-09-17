@@ -41,7 +41,7 @@ import static com.spotify.docker.Utils.writeImageInfoFile;
  * Applies a tag to a docker image. Optionally, {@code useGitCommitId} can be used to generate a
  * tag consisting of the first 7 characters of the most recent git commit ID.
  */
-@Mojo(name = "tag")
+@Mojo(name = "tag", threadSafe = true)
 public class TagMojo extends AbstractDockerMojo {
 
   /**
