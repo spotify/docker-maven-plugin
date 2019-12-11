@@ -265,6 +265,10 @@ public class BuildMojo extends AbstractDockerMojo {
   @Parameter(property = "healthcheck")
   private Map<String, String> healthcheck;
 
+  /** Set the networking mode for the RUN instructions during build */
+  @Parameter(property = "network")
+  private String network;
+
   private PluginParameterExpressionEvaluator expressionEvaluator;
 
   public BuildMojo() {
@@ -874,6 +878,9 @@ public class BuildMojo extends AbstractDockerMojo {
     if (!buildArgs.isEmpty()) {
       buildParams.add(DockerClient.BuildParam.create("buildargs", 
         URLEncoder.encode(OBJECT_MAPPER.writeValueAsString(buildArgs), "UTF-8")));
+    }
+    if (network!=null && network.length() > 0) {
+    	buildParams.add(DockerClient.BuildParam.create("networkmode", network));
     }
     return buildParams.toArray(new DockerClient.BuildParam[buildParams.size()]);
   }
