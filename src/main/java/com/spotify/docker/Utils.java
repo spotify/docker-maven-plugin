@@ -159,8 +159,19 @@ public class Utils {
           throws DockerException, IOException, InterruptedException {
       log.info(String.format("Save docker image %s to %s.",
               imageName, tarArchivePath.toAbsolutePath()));
+      final Path archiveParentDir = tarArchivePath.getParent().toAbsolutePath();
+      if (Files.exists(archiveParentDir)) {
+         if (!Files.isDirectory(archiveParentDir)) {
+            throw new IOException(
+                  "The provided path for docker image tar archive export exists, "
+                        + "but is not a directory: " + archiveParentDir.toString());
+         }
+      } else {
+         Files.createDirectories(archiveParentDir);
+      }
       final InputStream is = docker.save(imageName);
-      java.nio.file.Files.copy(is, tarArchivePath, StandardCopyOption.REPLACE_EXISTING);
+      java.nio.file.Files.copy(is, tarArchivePath.toAbsolutePath(),
+            StandardCopyOption.REPLACE_EXISTING);
   }
 
   @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
